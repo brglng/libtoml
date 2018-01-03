@@ -10,6 +10,7 @@ To compile this library, compiler with C99 support is required.
 
 - [ ] Date-time support
 - [ ] Unicode escape sequence support
+- [ ] Table get() API with path support
 - [ ] Encoding
 - [ ] JSON encoding
 - [ ] Add more tests

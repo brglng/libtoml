@@ -1,0 +1,56 @@
+cmake_minimum_required(VERSION 2.8)
+
+if(POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif()
+
+if(POLICY CMP0042)
+  cmake_policy(SET CMP0042 NEW)
+endif()
+
+project(toml C)
+set(${PROJECT_NAME}_VERSION_MAJOR 0)
+set(PROJECT_VERSION_MAJOR ${${PROJECT_NAME}_VERSION_MAJOR})
+set(${PROJECT_NAME}_VERSION_MINOR 0)
+set(PROJECT_VERSION_MINOR ${${PROJECT_NAME}_VERSION_MINOR})
+set(${PROJECT_NAME}_VERSION_PATCH 0)
+set(PROJECT_VERSION_PATCH ${${PROJECT_NAME}_VERSION_PATCH})
+set(${PROJECT_NAME}_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+set(PROJECT_VERSION ${${PROJECT_NAME}_VERSION})
+
+enable_testing()
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+add_definitions(-D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS)
+
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+
+elseif(("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU") OR ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang"))
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror=implicit -std=c99")
+  if (${CMAKE_C_COMPILER_VERSION} VERSION_GREATER "6.0.0")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=discarded-qualifiers -Werror=incompatible-pointer-types")
+  endif()
+  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fomit-frame-pointer -march=native")
+endif()
+
+set(CMAKE_C_EXTENSIONS      OFF)
+set(CMAKE_C_STANDARD        99)
+
+include(GNUInstallDirs)
+
+add_library(${PROJECT_NAME} toml.c)
+
+install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+add_subdirectory(tests)
+
+set(CPACK_GENERATOR "TGZ")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_SOURCE_IGNORE_FILES "/\\\\.git/;\\\\.git.*;/build/;/\\\\.idea/;/\\\\.ycm_extra_conf\\\\..*;/GPATH$;/GRTAGS$;/GSYMS$;/GTAGS$;\\\\.swp$;\\\\.swo$")
+set(CPACK_SOURCE_GENERATOR "TGZ")
+include(CPack)

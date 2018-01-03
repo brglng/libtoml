@@ -1167,7 +1167,7 @@ TomlValue *toml_parse_value(TomlParser *self, TomlErr *error)
     toml_next_n(self, 3);
     value = toml_parse_multi_line_basic_string(self, &err);
   } else if (strncmp(self->ptr, "\'\'\'", 3) == 0) {
-    toml_next_n(self, 3)
+    toml_next_n(self, 3);
     value = toml_parse_multi_line_literal_string(self, &err);
   } else if (ch == '\"') {
     toml_move_next(self);

@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <inttypes.h>
 #include "toml.h"
 
 void print_table(const TomlTable *table, TomlErr *error);
@@ -40,7 +41,7 @@ void print_value(const TomlValue *value, TomlErr *error)
     printf("\"%s\"", value->value.string->str);
     break;
   case TOML_INTEGER:
-    printf("%ld", value->value.integer);
+    printf("%" PRId64, value->value.integer);
     break;
   case TOML_FLOAT:
     printf("%f", value->value.float_);
@@ -147,4 +148,10 @@ int main(void)
 
   printf("total %d tests, %d success, %d fail\n",
          total_tests, num_success, num_fail);
+
+  if (num_fail > 0) {
+    return -1;
+  } else {
+    return 0;
+  }
 }

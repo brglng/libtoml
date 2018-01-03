@@ -51,5 +51,8 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+/build/
 .ycm_extra_conf.py
-.ycm_extra_conf.pyc
+*.pyc
+*.swp
+*.swo

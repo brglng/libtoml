@@ -1,8 +1,10 @@
 # libtoml
-Very tiny TOML parser and encoder in C. C99 is required.
+Very tiny [TOML](https://github.com/toml-lang/toml) parser and encoder in C.
 
 # Installation
 Just put `toml.h` and `toml.c` into your project.
+
+To compiler this library, compiler with C99 support is required.
 
 # TODO
 

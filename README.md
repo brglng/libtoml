@@ -6,10 +6,10 @@ Just put `toml.h` and `toml.c` into your project.
 
 # TODO
 
-[ ] Date-time support
-[ ] Unicode escape sequence support
-[ ] Encoding
-[ ] JSON encoding
-[ ] Add more tests
-[ ] Add CMake support
-[ ] Documentation
+- [ ] Date-time support
+- [ ] Unicode escape sequence support
+- [ ] Encoding
+- [ ] JSON encoding
+- [ ] Add more tests
+- [ ] Add CMake support
+- [ ] Documentation

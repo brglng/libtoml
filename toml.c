@@ -683,6 +683,13 @@ void toml_move_next(TomlParser *self)
   }
 }
 
+void toml_next_n(TomlParser *self, int n)
+{
+  for (int i = 0; i < n; i++) {
+    toml_move_next(self);
+  }
+}
+
 TomlString *toml_parse_bare_key(TomlParser *self, TomlErr *error)
 {
   const char *str = self->ptr;
@@ -943,11 +950,6 @@ TomlValue *toml_parse_multi_line_basic_string(TomlParser *self, TomlErr *error)
         if (err.code != TOML_OK) goto cleanup;
       }
     } else {
-      if (ch1 == '\n') {
-        self->lineno++;
-        self->colno = 1;
-      }
-
       toml_string_append_char(result, ch1, &err);
       if (err.code != TOML_OK) goto cleanup;
     }
@@ -962,9 +964,7 @@ TomlValue *toml_parse_multi_line_basic_string(TomlParser *self, TomlErr *error)
     goto cleanup;
   }
 
-  toml_move_next(self);
-  toml_move_next(self);
-  toml_move_next(self);
+  toml_next_n(self, 3);
 
   value = toml_value_new(TOML_STRING, &err);
   if (err.code != TOML_OK) goto cleanup;
@@ -1001,9 +1001,7 @@ TomlValue *toml_parse_multi_line_literal_string(TomlParser *self, TomlErr *error
     goto cleanup;
   }
 
-  toml_move_next(self);
-  toml_move_next(self);
-  toml_move_next(self);
+  toml_next_n(self, 3);
 
   value = toml_value_new(TOML_STRING, &err);
   if (err.code != TOML_OK) goto cleanup;
@@ -1138,20 +1136,13 @@ TomlValue *toml_parse_bool(TomlParser *self, TomlErr *error)
 {
   if (self->ptr + 4 <= self->end && strncmp(self->ptr, "true", 4) == 0 &&
       (self->ptr + 4 == self->end || isspace(*(self->ptr + 4)))) {
-    toml_move_next(self);
-    toml_move_next(self);
-    toml_move_next(self);
-    toml_move_next(self);
+    toml_next_n(self, 4);
     return toml_value_new_boolean(true, error);
   }
 
   if (self->ptr + 5 <= self->end && strncmp(self->ptr, "false", 5) == 0 &&
       (self->ptr + 5 == self->end || isspace(*(self->ptr + 5)))) {
-    toml_move_next(self);
-    toml_move_next(self);
-    toml_move_next(self);
-    toml_move_next(self);
-    toml_move_next(self);
+    toml_next_n(self, 5);
     return toml_value_new_boolean(false, error);
   }
 
@@ -1169,14 +1160,10 @@ TomlValue *toml_parse_value(TomlParser *self, TomlErr *error)
   char ch = *self->ptr;
 
   if (strncmp(self->ptr, "\"\"\"", 3) == 0) {
-    toml_move_next(self);
-    toml_move_next(self);
-    toml_move_next(self);
+    toml_next_n(self, 3);
     value = toml_parse_multi_line_basic_string(self, &err);
   } else if (strncmp(self->ptr, "\'\'\'", 3) == 0) {
-    toml_move_next(self);
-    toml_move_next(self);
-    toml_move_next(self);
+    toml_next_n(self, 3)
     value = toml_parse_multi_line_literal_string(self, &err);
   } else if (ch == '\"') {
     toml_move_next(self);
@@ -1541,8 +1528,7 @@ void toml_parse_table(TomlParser *self, TomlTable *table, TomlErr *error)
     if (is_array) {
       if (self->ptr + 2 <= self->end && *self->ptr != '\n') {
         if (strncmp(self->ptr, "]]", 2) == 0) {
-          toml_move_next(self);
-          toml_move_next(self);
+          toml_next_n(self, 2);
           break;
         }
       } else {

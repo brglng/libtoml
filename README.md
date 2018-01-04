@@ -89,7 +89,7 @@ cleanup:
 
 - [x] Add CMake support
 - [x] Add more tests
-- [ ] Unicode escape sequence support
+- [x] Unicode escape sequence support
 - [ ] Date-time support
 - [ ] Encoding
 - [ ] JSON encoding

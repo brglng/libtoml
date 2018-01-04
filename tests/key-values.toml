@@ -4,7 +4,7 @@ key1-bare-with-dash = "basic string 1"
 
 key2-bare_with_underscore = 'literal string 2'
 
-3-key-start-with-digit = "basic string \b 3 with \t space \f and\"escapes\\\n"
+3-key-start-with-digit = "basic string \b 3 with \t space \f and\"escapes \\\u05d0\n"
 
 "key 4 double quoted\n" = "basic string \rbasic string with carriage return"
 

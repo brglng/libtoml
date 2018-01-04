@@ -783,54 +783,101 @@ char toml_hex_char_to_int(char ch)
   assert(false);
 }
 
-void toml_encode_unicode_scalar16(TomlString *result, TomlParser *parser, TomlErr *error)
+void toml_encode_unicode_scalar(TomlString *result, TomlParser *parser, int n, TomlErr *error)
 {
-  uint16_t scalar = 0;
-
-  if (parser->ptr + 4 >= parser->end) {
-    toml_set_err(error, TOML_ERR_SYNTAX, "%s:%d:%d: invalid unicode scalar",
-                 parser->filename, parser->lineno, parser->colno);
-    return;
-  }
-
-  for (int i = 0; i < 4; i++) {
-    char ch = *parser->ptr;
-    if (isxdigit(ch)) {
-      scalar = scalar * 16 + toml_hex_char_to_int(ch);
-      toml_move_next(parser);
-    } else {
-      toml_set_err(error, TOML_ERR_SYNTAX, "%s:%d:%d: invalid unicode scalar",
-                   parser->filename, parser->lineno, parser->colno);
-      break;
-    }
-  }
-
-  (void)result;
-}
-
-void toml_encode_unicode_scalar32(TomlString *result, TomlParser *parser, TomlErr *error)
-{
+  TomlErr err = TOML_ERR_INIT;
   uint32_t scalar = 0;
 
-  if (parser->ptr + 8 >= parser->end) {
-    toml_set_err(error, TOML_ERR_SYNTAX, "%s:%d:%d: invalid unicode scalar",
+  if (parser->ptr + n > parser->end) {
+    toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid unicode scalar",
                  parser->filename, parser->lineno, parser->colno);
-    return;
+    goto cleanup;
   }
 
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < n; i++) {
     char ch = *parser->ptr;
     if (isxdigit(ch)) {
       scalar = scalar * 16 + toml_hex_char_to_int(ch);
       toml_move_next(parser);
     } else {
-      toml_set_err(error, TOML_ERR_SYNTAX, "%s:%d:%d: invalid unicode scalar",
+      toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid unicode scalar",
                    parser->filename, parser->lineno, parser->colno);
-      break;
+      goto cleanup;
     }
   }
 
-  (void)result;
+  if ((scalar >= 0xd800 && scalar <= 0xdfff) ||
+      (scalar >= 0xfffe && scalar <= 0xffff)) {
+    toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid unicode scalar",
+                 parser->filename, parser->lineno, parser->colno);
+    goto cleanup;
+  }
+
+  if (scalar <= 0x7f) {
+    toml_string_append_char(result, (char)scalar, &err);
+    goto cleanup;
+  }
+
+  if (scalar <= 0x7ff) {
+    toml_string_append_char(result, 0xc0 | (scalar >> 6), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | (scalar & 0x3f), &err);
+    goto cleanup;
+  }
+
+  if (scalar <= 0xffff) {
+    toml_string_append_char(result, 0xe0 | (scalar >> 12), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | ((scalar >> 6) & 0x3f), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | (scalar & 0x3f), &err);
+    goto cleanup;
+  }
+
+  if (scalar <= 0x1fffff) {
+    toml_string_append_char(result, 0xf0 | (scalar >> 18), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | ((scalar >> 12) & 0x3f), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | ((scalar >> 6) & 0x3f), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | (scalar & 0x3f), &err);
+    goto cleanup;
+  }
+
+  if (scalar <= 0x3ffffff) {
+    toml_string_append_char(result, 0xf8 | (scalar >> 24), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | ((scalar >> 18) & 0x3f), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | ((scalar >> 12) & 0x3f), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | ((scalar >> 6) & 0x3f), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | (scalar & 0x3f), &err);
+    goto cleanup;
+  }
+
+  if (scalar <= 0x7fffffff) {
+    toml_string_append_char(result, 0xfc | (scalar >> 30), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | ((scalar >> 24) & 0x3f), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | ((scalar >> 18) & 0x3f), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | ((scalar >> 12) & 0x3f), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | ((scalar >> 6) & 0x3f), &err);
+    if (err.code != TOML_OK) goto cleanup;
+    toml_string_append_char(result, 0x80 | (scalar & 0x3f), &err);
+    goto cleanup;
+  }
+
+  toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid unicode scalar",
+               parser->filename, parser->lineno, parser->colno);
+
+cleanup:
+  toml_err_move(error, &err);
 }
 
 TomlString *toml_parse_basic_string(TomlParser *self, TomlErr *error)
@@ -873,9 +920,11 @@ TomlString *toml_parse_basic_string(TomlParser *self, TomlErr *error)
         toml_string_append_char(result, '\\', &err);
         toml_move_next(self);
       } else if (ch2 == 'u') {
-        toml_encode_unicode_scalar16(result, self, &err);
+        toml_move_next(self);
+        toml_encode_unicode_scalar(result, self, 4, &err);
       } else if (ch2 == 'U') {
-        toml_encode_unicode_scalar32(result, self, &err);
+        toml_move_next(self);
+        toml_encode_unicode_scalar(result, self, 8, &err);
       } else {
         toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid escape charactor");
         goto cleanup;
@@ -1010,9 +1059,11 @@ TomlValue *toml_parse_multi_line_basic_string(TomlParser *self, TomlErr *error)
         toml_string_append_char(result, '\\', &err);
         toml_move_next(self);
       } else if (ch2 == 'u') {
-        toml_encode_unicode_scalar16(result, self, &err);
+        toml_move_next(self);
+        toml_encode_unicode_scalar(result, self, 4, &err);
       } else if (ch2 == 'U') {
-        toml_encode_unicode_scalar32(result, self, &err);
+        toml_move_next(self);
+        toml_encode_unicode_scalar(result, self, 8, &err);
       } else if (ch2 == '\n') {
         do {
           toml_move_next(self);

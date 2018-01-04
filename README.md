@@ -66,6 +66,9 @@ cleanup:
     fprintf("toml: %d: %s\n", err.code, err.message);
   }
 
+  /* free the iterator */
+  toml_table_iter_free(it);
+
   /* free the table */
   toml_table_free(table);
 

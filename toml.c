@@ -1080,7 +1080,7 @@ TomlValue *toml_parse_int_or_float_or_time(TomlParser *self, TomlErr *error)
        strncmp(self->ptr, "-inf", 4) == 0)) {
     type = 'f';
   }
-  
+
   // If there is a base prefix, set the base and strip the prefix,
   // because strtoll() do not recognize 0o and 0b
   if (self->ptr + 2 <= self->end) {
@@ -1320,6 +1320,9 @@ void toml_parse_key_value(TomlParser *self, TomlTable *table, TomlErr *error)
     toml_table_set_string(table, key, value, &err);
     if (err.code != TOML_OK) goto error;
 
+    key = NULL;
+    value = NULL;
+
     while (self->ptr < self->end && (*self->ptr == ' ' || *self->ptr == '\t')) {
       toml_move_next(self);
     }
@@ -1386,6 +1389,8 @@ TomlValue *toml_parse_array(TomlParser *self, TomlErr *error)
 
       toml_array_append(array->value.array, value, &err);
       if (err.code != TOML_OK) goto error;
+
+      value = NULL;
 
       while (self->ptr < self->end) {
         if (isspace(*self->ptr)) {
@@ -1531,6 +1536,9 @@ TomlTable *toml_walk_table_path(TomlParser *parser, TomlTable *table,
         if (err.code != TOML_OK) goto error;
 
         real_table = new_table->value.table;
+
+        part_copy = NULL;
+        new_table = NULL;
       } else {
         real_table = t->value.table;
       }
@@ -1555,6 +1563,10 @@ TomlTable *toml_walk_table_path(TomlParser *parser, TomlTable *table,
       if (err.code != TOML_OK) goto error;
 
       real_table = new_table->value.table;
+
+      part_copy = NULL;
+      array = NULL;
+      new_table = NULL;
     } else {
       if (t->type != TOML_ARRAY) {
         toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: this key was not an array",
@@ -1585,6 +1597,9 @@ TomlTable *toml_walk_table_path(TomlParser *parser, TomlTable *table,
         if (err.code != TOML_OK) goto error;
 
         real_table = new_table->value.table;
+
+        part_copy = NULL;
+        new_table = NULL;
       } else {
         if (t->type == TOML_ARRAY) {
           real_table = t->value.array->elements[t->value.array->len - 1]->value.table;

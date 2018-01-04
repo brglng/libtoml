@@ -35,9 +35,13 @@ Basic parsing:
   table = toml_load_filename("path/to/my/file.toml", &err);
 
   /* load from a FILE* */
+
   /* open with "rb" is required */
   FILE *f = fopen("path/to/my/file.toml", "rb");
   table = toml_load_file(f, &err);
+
+  /* you can close the file after parsing */
+  fclose(f);
 
   /* load from string */
   table = toml_load_string("[table1]\na = 1", &err);

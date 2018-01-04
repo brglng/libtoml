@@ -83,7 +83,6 @@ cleanup:
   * who has a TomlErr * parameter, or there will be an assertion failure.
   */
   toml_err_clear(&err);
-  }
 ```
 
 # TODO

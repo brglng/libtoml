@@ -89,7 +89,6 @@ cleanup:
 
 - [x] Add CMake support
 - [x] Add more tests
-- [ ] Table set()/get() API with path support
 - [ ] Unicode escape sequence support
 - [ ] Date-time support
 - [ ] Encoding

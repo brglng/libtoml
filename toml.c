@@ -338,8 +338,8 @@ void toml_table_check_expand(TomlTable *self, TomlErr *err)
   }
 }
 
-void toml_table_set_string(TomlTable *self, TomlString *key, TomlValue *value,
-                           TomlErr *error)
+void toml_table_set_by_string(TomlTable *self, TomlString *key,
+                              TomlValue *value, TomlErr *error)
 {
   TomlErr err = TOML_ERR_INIT;
 
@@ -365,7 +365,7 @@ void toml_table_set_string(TomlTable *self, TomlString *key, TomlValue *value,
   }
 }
 
-TomlValue *toml_table_get_string(const TomlTable *self, const TomlString *key)
+TomlValue *toml_table_get_by_string(const TomlTable *self, const TomlString *key)
 {
   TomlValue *value = NULL;
   for (size_t i = 0; i < self->len; i++) {
@@ -374,6 +374,43 @@ TomlValue *toml_table_get_string(const TomlTable *self, const TomlString *key)
     }
   }
   return value;
+}
+
+TomlValue *toml_table_getn(const TomlTable *self, const char *key, size_t key_len)
+{
+  TomlString str = {(char *)key, key_len, 0};
+  return toml_table_get_by_string(self, &str);
+}
+
+TomlValue *toml_table_get(const TomlTable *self, const char *key)
+{
+  return toml_table_getn(self, key, strlen(key));
+}
+
+void toml_table_setn(TomlTable *self, const char *key, size_t key_len,
+                     TomlValue *value, TomlErr *error)
+{
+  TomlErr err = TOML_ERR_INIT;
+  TomlString *str = NULL;
+
+  str = toml_string_new_nstring(key, key_len, &err);
+  if (err.code != TOML_OK) goto error;
+
+  toml_table_set_by_string(self, str, value, &err);
+  if (err.code != TOML_OK) goto error;
+
+  goto cleanup;
+
+error:
+  toml_string_free(str);
+
+cleanup:
+  toml_err_move(error, &err);
+}
+
+void toml_table_set(TomlTable *self, const char *key, TomlValue *value, TomlErr *error)
+{
+  toml_table_setn(self, key, strlen(key), value, error);
 }
 
 struct _TomlTableIter {
@@ -660,7 +697,7 @@ void toml_value_free(TomlValue *self)
   }
 }
 
-typedef struct {
+typedef struct _TomlParser {
   const char *begin;
   const char *end;
   const char *ptr;
@@ -682,7 +719,7 @@ TomlParser *toml_parser_new(const char *str, size_t len, TomlErr *error)
   self->ptr = str;
   self->lineno = 1;
   self->colno = 1;
-  self->filename = "<string>";
+  self->filename = NULL;
 
   return self;
 }
@@ -690,6 +727,7 @@ TomlParser *toml_parser_new(const char *str, size_t len, TomlErr *error)
 void toml_parser_free(TomlParser *self)
 {
   if (self != NULL) {
+    free(self->filename);
     free(self);
   }
 }
@@ -1317,7 +1355,7 @@ void toml_parse_key_value(TomlParser *self, TomlTable *table, TomlErr *error)
     value = toml_parse_value(self, &err);
     if (err.code != TOML_OK) goto error;
 
-    toml_table_set_string(table, key, value, &err);
+    toml_table_set_by_string(table, key, value, &err);
     if (err.code != TOML_OK) goto error;
 
     key = NULL;
@@ -1490,7 +1528,7 @@ TomlValue *toml_parse_inline_table(TomlParser *self, TomlErr *error)
     value = toml_parse_value(self, &err);
     if (err.code != TOML_OK) goto cleanup;
 
-    toml_table_set_string(table->value.table, key, value, &err);
+    toml_table_set_by_string(table->value.table, key, value, &err);
     if (err.code != TOML_OK) goto cleanup;
 
     while (self->ptr < self->end && (*self->ptr == ' ' || *self->ptr == '\t')) {
@@ -1512,7 +1550,7 @@ cleanup:
 
 TomlTable *toml_walk_table_path(TomlParser *parser, TomlTable *table,
                                 TomlArray *key_path, bool is_array,
-                                TomlErr *error)
+                                bool create_if_not_exist, TomlErr *error)
 {
   TomlErr err = TOML_ERR_INIT;
   TomlTable *real_table = table;
@@ -1524,49 +1562,58 @@ TomlTable *toml_walk_table_path(TomlParser *parser, TomlTable *table,
     size_t i = 0;
     for (; i < key_path->len - 1; i++) {
       TomlString *part = key_path->elements[i]->value.string;
-      TomlValue *t = toml_table_get_string(real_table, part);
+      TomlValue *t = toml_table_get_by_string(real_table, part);
       if (t == NULL) {
-        new_table = toml_value_new_table(&err);
-        if (err.code != TOML_OK) goto error;
+        if (create_if_not_exist) {
+          new_table = toml_value_new_table(&err);
+          if (err.code != TOML_OK) goto error;
 
-        part_copy = toml_string_copy(part, &err);
-        if (err.code != TOML_OK) goto error;
+          part_copy = toml_string_copy(part, &err);
+          if (err.code != TOML_OK) goto error;
 
-        toml_table_set_string(real_table, part_copy, new_table, &err);
-        if (err.code != TOML_OK) goto error;
+          toml_table_set_by_string(real_table, part_copy, new_table, &err);
+          if (err.code != TOML_OK) goto error;
 
-        real_table = new_table->value.table;
+          real_table = new_table->value.table;
 
-        part_copy = NULL;
-        new_table = NULL;
+          part_copy = NULL;
+          new_table = NULL;
+        } else {
+          real_table = NULL;
+          break;
+        }
       } else {
         real_table = t->value.table;
       }
     }
 
     TomlString *part = key_path->elements[i]->value.string;
-    TomlValue *t = toml_table_get_string(real_table, part);
+    TomlValue *t = toml_table_get_by_string(real_table, part);
     if (t == NULL) {
-      TomlValue *array = toml_value_new_array(&err);
-      if (err.code != TOML_OK) goto error;
+      if (create_if_not_exist) {
+        TomlValue *array = toml_value_new_array(&err);
+        if (err.code != TOML_OK) goto error;
 
-      TomlValue *new_table = toml_value_new_table(&err);
-      if (err.code != TOML_OK) goto error;
+        TomlValue *new_table = toml_value_new_table(&err);
+        if (err.code != TOML_OK) goto error;
 
-      toml_array_append(array->value.array, new_table, &err);
-      if (err.code != TOML_OK) goto error;
+        toml_array_append(array->value.array, new_table, &err);
+        if (err.code != TOML_OK) goto error;
 
-      TomlString *part_copy = toml_string_copy(part, &err);
-      if (err.code != TOML_OK) goto error;
+        TomlString *part_copy = toml_string_copy(part, &err);
+        if (err.code != TOML_OK) goto error;
 
-      toml_table_set_string(real_table, part_copy, array, &err);
-      if (err.code != TOML_OK) goto error;
+        toml_table_set_by_string(real_table, part_copy, array, &err);
+        if (err.code != TOML_OK) goto error;
 
-      real_table = new_table->value.table;
+        real_table = new_table->value.table;
 
-      part_copy = NULL;
-      array = NULL;
-      new_table = NULL;
+        part_copy = NULL;
+        array = NULL;
+        new_table = NULL;
+      } else {
+        real_table = NULL;
+      }
     } else {
       if (t->type != TOML_ARRAY) {
         toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: this key was not an array",
@@ -1585,21 +1632,26 @@ TomlTable *toml_walk_table_path(TomlParser *parser, TomlTable *table,
   } else {
     for (size_t i = 0; i < key_path->len; i++) {
       TomlString *part = key_path->elements[i]->value.string;
-      TomlValue *t = toml_table_get_string(real_table, part);
+      TomlValue *t = toml_table_get_by_string(real_table, part);
       if (t == NULL) {
-        TomlValue *new_table = toml_value_new_table(&err);
-        if (err.code != TOML_OK) goto error;
+        if (create_if_not_exist) {
+          TomlValue *new_table = toml_value_new_table(&err);
+          if (err.code != TOML_OK) goto error;
 
-        TomlString *part_copy = toml_string_copy(part, &err);
-        if (err.code != TOML_OK) goto error;
+          TomlString *part_copy = toml_string_copy(part, &err);
+          if (err.code != TOML_OK) goto error;
 
-        toml_table_set_string(real_table, part_copy, new_table, &err);
-        if (err.code != TOML_OK) goto error;
+          toml_table_set_by_string(real_table, part_copy, new_table, &err);
+          if (err.code != TOML_OK) goto error;
 
-        real_table = new_table->value.table;
+          real_table = new_table->value.table;
 
-        part_copy = NULL;
-        new_table = NULL;
+          part_copy = NULL;
+          new_table = NULL;
+        } else {
+          real_table = NULL;
+          break;
+        }
       } else {
         if (t->type == TOML_ARRAY) {
           real_table = t->value.array->elements[t->value.array->len - 1]->value.table;
@@ -1707,7 +1759,7 @@ void toml_parse_table(TomlParser *self, TomlTable *table, TomlErr *error)
     goto cleanup;
   }
 
-  real_table = toml_walk_table_path(self, table, key_path, is_array, &err);
+  real_table = toml_walk_table_path(self, table, key_path, is_array, true, &err);
   if (err.code != TOML_OK) goto cleanup;
 
   toml_parse_key_value(self, real_table, &err);
@@ -1762,7 +1814,8 @@ cleanup:
   return table;
 }
 
-TomlTable *toml_load_nstring(const char *str, size_t len, TomlErr *error)
+TomlTable *toml_load_nstring_filename(const char *str, size_t len,
+                                      const char *filename, TomlErr *error)
 {
   TomlErr err = TOML_ERR_INIT;
   TomlParser *parser = NULL;
@@ -1770,6 +1823,8 @@ TomlTable *toml_load_nstring(const char *str, size_t len, TomlErr *error)
 
   parser = toml_parser_new(str, len, &err);
   if (err.code != TOML_OK) goto cleanup;
+
+  parser->filename = toml_strdup(filename);
 
   table = toml_parse(parser, &err);
   if (err.code != TOML_OK) goto cleanup;
@@ -1780,12 +1835,17 @@ cleanup:
   return table;
 }
 
+TomlTable *toml_load_nstring(const char *str, size_t len, TomlErr *error)
+{
+  return toml_load_nstring_filename(str, len, "<string>", error);
+}
+
 TomlTable *toml_load_string(const char *str, TomlErr *error)
 {
   return toml_load_nstring(str, sizeof(str), error);
 }
 
-TomlTable *toml_load_file(FILE *file, TomlErr *error)
+TomlTable *toml_load_file_filename(FILE *file, const char *filename, TomlErr *error)
 {
   TomlErr err = TOML_ERR_INIT;
   TomlTable *table = NULL;
@@ -1819,12 +1879,17 @@ TomlTable *toml_load_file(FILE *file, TomlErr *error)
     goto cleanup;
   }
 
-  table = toml_load_nstring(str->str, str->len, &err);
+  table = toml_load_nstring_filename(str->str, str->len, filename, &err);
 
 cleanup:
   toml_string_free(str);
   toml_err_move(error, &err);
   return table;
+}
+
+TomlTable *toml_load_file(FILE *file, TomlErr *error)
+{
+  return toml_load_file_filename(file, "<stream>", error);
 }
 
 TomlTable *toml_load_filename(const char *filename, TomlErr *error)
@@ -1839,7 +1904,7 @@ TomlTable *toml_load_filename(const char *filename, TomlErr *error)
     goto cleanup;
   }
 
-  table = toml_load_file(f, &err);
+  table = toml_load_file_filename(f, filename, &err);
 
 cleanup:
   if (f != NULL) fclose(f);

@@ -100,13 +100,14 @@ bool toml_string_equals(const TomlString *self, const TomlString *other);
 TomlTable *toml_table_new(TomlErr *err);
 void toml_table_free(TomlTable *self);
 
-/* TODO: impelement get/set by key path functions
+void toml_table_set_by_string(TomlTable *self, TomlString *key,
+                              TomlValue *value, TomlErr *err);
+TomlValue *toml_table_get_by_string(const TomlTable *self, const TomlString *key);
 void toml_table_set(TomlTable *self, const char *key, TomlValue *value, TomlErr *err);
-void toml_table_set_n(TomlTable *self, const char *key, size_t key_len,
+void toml_table_setn(TomlTable *self, const char *key, size_t key_len,
                       TomlValue *value, TomlErr *err);
 TomlValue *toml_table_get(const TomlTable *self, const char *key);
-TomlValue *toml_table_get_n(const TomlTable *self, const char *key, size_t key_len);
-*/
+TomlValue *toml_table_getn(const TomlTable *self, const char *key, size_t key_len);
 
 TomlTableIter *toml_table_iter_new(TomlTable *table, TomlErr *err);
 void toml_table_iter_free(TomlTableIter *self);

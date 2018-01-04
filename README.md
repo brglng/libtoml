@@ -77,11 +77,11 @@ cleanup:
   toml_table_free(table);
 
   /*
-  * There can be memory leak without toml_err_clear().
-  *
-  * If error occurred, you must call toml_err_clear() before the next call
-  * who has a TomlErr * parameter, or there will be an assertion failure.
-  */
+   * There can be memory leak without toml_err_clear().
+   *
+   * If error occurred, you must call toml_err_clear() before the next call
+   * who has a TomlErr * parameter, or there will be an assertion failure.
+   */
   toml_err_clear(&err);
 ```
 

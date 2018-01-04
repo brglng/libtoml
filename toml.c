@@ -257,6 +257,19 @@ void toml_string_free(TomlString *self)
   }
 }
 
+TomlString *toml_string_copy(const TomlString *self, TomlErr *error)
+{
+  TomlErr err = TOML_ERR_INIT;
+  TomlString *str = NULL;
+
+  str = toml_string_new_nstring(self->str, self->len, &err);
+  if (err.code != TOML_OK) {
+    toml_err_move(error, &err);
+  }
+
+  return str;
+}
+
 bool toml_string_equals(const TomlString *self, const TomlString *other)
 {
   if (self == other) {
@@ -302,6 +315,10 @@ TomlTable *toml_table_new(TomlErr *err)
 void toml_table_free(TomlTable *self)
 {
   if (self != NULL) {
+    for (size_t i = 0; i < self->len; i++) {
+      toml_string_free(self->keyvals[i].key);
+      toml_value_free(self->keyvals[i].value);
+    }
     free(self->keyvals);
     free(self);
   }
@@ -321,8 +338,8 @@ void toml_table_check_expand(TomlTable *self, TomlErr *err)
   }
 }
 
-void toml_table_set(TomlTable *self, TomlString *key, TomlValue *value,
-                    TomlErr *error)
+void toml_table_set_string(TomlTable *self, TomlString *key, TomlValue *value,
+                           TomlErr *error)
 {
   TomlErr err = TOML_ERR_INIT;
 
@@ -348,7 +365,7 @@ void toml_table_set(TomlTable *self, TomlString *key, TomlValue *value,
   }
 }
 
-TomlValue *toml_table_get(const TomlTable *self, const TomlString *key)
+TomlValue *toml_table_get_string(const TomlTable *self, const TomlString *key)
 {
   TomlValue *value = NULL;
   for (size_t i = 0; i < self->len; i++) {
@@ -419,6 +436,9 @@ TomlArray *toml_array_new(TomlErr *error)
 void toml_array_free(TomlArray *self)
 {
   if (self != NULL) {
+    for (size_t i = 0; i < self->len; i++) {
+      toml_value_free(self->elements[i]);
+    }
     free(self->elements);
     free(self);
   }
@@ -792,20 +812,28 @@ TomlString *toml_parse_basic_string(TomlParser *self, TomlErr *error)
 
       if (ch2 == '\"') {
         toml_string_append_char(result, '\"', &err);
+        toml_move_next(self);
       } else if (ch2 == 'b') {
         toml_string_append_char(result, '\b', &err);
+        toml_move_next(self);
       } else if (ch2 == 't') {
         toml_string_append_char(result, '\t', &err);
+        toml_move_next(self);
       } else if (ch2 == 'n') {
         toml_string_append_char(result, '\n', &err);
+        toml_move_next(self);
       } else if (ch2 == 'f') {
         toml_string_append_char(result, '\f', &err);
+        toml_move_next(self);
       } else if (ch2 == 'r') {
         toml_string_append_char(result, '\r', &err);
+        toml_move_next(self);
       } else if (ch2 == '"') {
         toml_string_append_char(result, '\"', &err);
+        toml_move_next(self);
       } else if (ch2 == '\\') {
         toml_string_append_char(result, '\\', &err);
+        toml_move_next(self);
       } else if (ch2 == 'u') {
         toml_encode_unicode_scalar16(result, self, &err);
       } else if (ch2 == 'U') {
@@ -816,9 +844,8 @@ TomlString *toml_parse_basic_string(TomlParser *self, TomlErr *error)
       }
     } else {
       toml_string_append_char(result, ch1, &err);
+      toml_move_next(self);
     }
-    toml_move_next(self);
-
     if (err.code != TOML_OK) goto cleanup;
   }
 
@@ -848,8 +875,8 @@ TomlString *toml_parse_literal_string(TomlParser *self, TomlErr *error)
     toml_move_next(self);
   }
 
-  if (self->ptr >= self->end || *self->ptr != '\"' || *self->ptr == '\n') {
-    toml_set_err(error, TOML_ERR_SYNTAX, "%s:%d:%d: unterminated literal string",
+  if (self->ptr >= self->end || *self->ptr != '\'' || *self->ptr == '\n') {
+    toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: unterminated literal string",
                  self->filename, self->lineno, self->colno);
   }
 
@@ -922,44 +949,47 @@ TomlValue *toml_parse_multi_line_basic_string(TomlParser *self, TomlErr *error)
 
       if (ch2 == '\"') {
         toml_string_append_char(result, '\"', &err);
+        toml_move_next(self);
       } else if (ch2 == 'b') {
         toml_string_append_char(result, '\b', &err);
+        toml_move_next(self);
       } else if (ch2 == 't') {
         toml_string_append_char(result, '\t', &err);
+        toml_move_next(self);
       } else if (ch2 == 'n') {
         toml_string_append_char(result, '\n', &err);
+        toml_move_next(self);
       } else if (ch2 == 'f') {
         toml_string_append_char(result, '\f', &err);
+        toml_move_next(self);
       } else if (ch2 == 'r') {
         toml_string_append_char(result, '\r', &err);
+        toml_move_next(self);
       } else if (ch2 == '"') {
         toml_string_append_char(result, '\"', &err);
+        toml_move_next(self);
       } else if (ch2 == '\\') {
         toml_string_append_char(result, '\\', &err);
+        toml_move_next(self);
       } else if (ch2 == 'u') {
         toml_encode_unicode_scalar16(result, self, &err);
       } else if (ch2 == 'U') {
         toml_encode_unicode_scalar32(result, self, &err);
       } else if (ch2 == '\n') {
-        toml_move_next(self);
-        while (self->ptr + 3 <= self->end &&
-               (*self->ptr == ' ' || *self->ptr == '\t' || *self->ptr == '\r')) {
+        do {
           toml_move_next(self);
-        }
+        } while (self->ptr + 3 <= self->end && isspace(*self->ptr));
       } else {
-        toml_string_append_char(result, ch1, &err);
-        if (err.code != TOML_OK) goto cleanup;
-
-        toml_string_append_char(result, ch2, &err);
-        if (err.code != TOML_OK) goto cleanup;
+        toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid escape charactor",
+                     self->filename, self->lineno, self->colno);
+        goto cleanup;
       }
     } else {
       toml_string_append_char(result, ch1, &err);
-      if (err.code != TOML_OK) goto cleanup;
+      toml_move_next(self);
     }
-
-    toml_move_next(self);
   }
+  if (err.code != TOML_OK) goto cleanup;
 
   if (self->ptr + 3 > self->end || strncmp(self->ptr, "\"\"\"", 3) != 0) {
     toml_set_err(&err, TOML_ERR_SYNTAX,
@@ -1031,87 +1061,107 @@ TomlValue *toml_parse_int_or_float_or_time(TomlParser *self, TomlErr *error)
   TomlValue *result = NULL;
 
   char type = 'i';
+  int base = 10;
 
   str = toml_string_new(&err);
   if (err.code != TOML_OK) goto cleanup;
 
+  // Determine nan and inf type as float, as we cannot determine by dot.
+  // But do not strip it because we will append it to the string later
   if (self->ptr + 3 <= self->end &&
       (strncmp(self->ptr, "nan", 3) == 0 || strncmp(self->ptr, "inf", 3) == 0)) {
-    toml_string_append_nstring(str, self->ptr, 3, &err);
-    if (err.code != TOML_OK) goto cleanup;
     type = 'f';
-  } else if (self->ptr + 4 <= self->end &&
-             (strncmp(self->ptr, "+nan", 4) == 0 ||
-              strncmp(self->ptr, "-nan", 4) == 0 ||
-              strncmp(self->ptr, "+inf", 4) == 0 ||
-              strncmp(self->ptr, "-inf", 4) == 0)) {
-    toml_string_append_nstring(str, self->ptr, 4, &err);
-    if (err.code != TOML_OK) goto cleanup;
-    type = 'f';
-  } else {
+  }
 
-    char last_char = 0;
-    bool has_exp = false;
-    while (self->ptr < self->end) {
-      if (*self->ptr == '+' || *self->ptr == '-') {
-        if (last_char == 0 || ((last_char == 'e' || last_char == 'E') && !has_exp)) {
-          if (last_char != 0) {
-            type = 'f';
-            has_exp = true;
-          }
-          toml_string_append_char(str, *self->ptr, &err);
-          if (err.code != TOML_OK) goto cleanup;
-        } else {
-          break;
+  if (self->ptr + 4 <= self->end &&
+      (strncmp(self->ptr, "+nan", 4) == 0 ||
+       strncmp(self->ptr, "-nan", 4) == 0 ||
+       strncmp(self->ptr, "+inf", 4) == 0 ||
+       strncmp(self->ptr, "-inf", 4) == 0)) {
+    type = 'f';
+  }
+  
+  // If there is a base prefix, set the base and strip the prefix,
+  // because strtoll() do not recognize 0o and 0b
+  if (self->ptr + 2 <= self->end) {
+    if (strncmp(self->ptr, "0x", 2) == 0) {
+      base = 16;
+      toml_next_n(self, 2);
+    } else if (strncmp(self->ptr, "0o", 2) == 0) {
+      base = 8;
+      toml_next_n(self, 2);
+    } else if (strncmp(self->ptr, "0b", 2) == 0) {
+      base = 2;
+      toml_next_n(self, 2);
+    }
+  }
+
+  char last_char = 0;
+  bool has_exp = false;
+  while (self->ptr < self->end) {
+    if (*self->ptr == '+' || *self->ptr == '-') {
+      if (last_char == 0 || ((last_char == 'e' || last_char == 'E') && !has_exp)) {
+        if (last_char != 0) {
+          type = 'f';
+          has_exp = true;
         }
-      } else if (isalnum(*self->ptr)) {
         toml_string_append_char(str, *self->ptr, &err);
         if (err.code != TOML_OK) goto cleanup;
-      } else if (*self->ptr == '.') {
-        if (type == 'i') {
-          type = 'f';
-          toml_string_append_char(str, *self->ptr, &err);
-          if (err.code != TOML_OK) goto cleanup;
-        } else {
-          toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid float",
-                       self->filename, self->lineno, self->colno);
-          goto cleanup;
-        }
-      } else if (*self->ptr == '_') {
-        if (type == 't') {
-          toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid datetime",
-                       self->filename, self->lineno, self->colno);
-          goto cleanup;
-        }
-
-        if (!isalnum(last_char)) {
-          toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer or float",
-                       self->filename, self->lineno, self->colno);
-          goto cleanup;
-        }
-      } else if (*self->ptr == '-') {
-        type = 't';
-        toml_string_append_char(str, *self->ptr, &err);
       } else {
         break;
       }
+    } else if (isalnum(*self->ptr)) {
+      if ((*self->ptr == 'e' || *self->ptr == 'E') && base == 10) {
+        type = 'f';
+      }
 
-      last_char = *self->ptr;
-      toml_move_next(self);
+      toml_string_append_char(str, *self->ptr, &err);
+      if (err.code != TOML_OK) goto cleanup;
+    } else if (*self->ptr == '.') {
+      if (type == 'i') {
+        type = 'f';
+        toml_string_append_char(str, *self->ptr, &err);
+        if (err.code != TOML_OK) goto cleanup;
+      } else {
+        toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid float",
+                     self->filename, self->lineno, self->colno);
+        goto cleanup;
+      }
+    } else if (*self->ptr == '_') {
+      if (type == 't') {
+        toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid datetime",
+                     self->filename, self->lineno, self->colno);
+        goto cleanup;
+      }
+
+      if (!isalnum(last_char)) {
+        toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer or float",
+                     self->filename, self->lineno, self->colno);
+        goto cleanup;
+      }
+    } else if (*self->ptr == '-') {
+      type = 't';
+      toml_string_append_char(str, *self->ptr, &err);
+    } else {
+      break;
     }
 
-    if (last_char == '_') {
-      toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer or float or datetime",
-                   self->filename, self->lineno, self->colno);
-      goto cleanup;
-    }
+    last_char = *self->ptr;
+    toml_move_next(self);
+  }
+
+  if (last_char == '_') {
+    toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer or float or datetime",
+                 self->filename, self->lineno, self->colno);
+    goto cleanup;
   }
 
   if (type == 'i') {
     char *end = NULL;
-    int64_t n = strtoll(str->str, &end, 0);
+    int64_t n = strtoll(str->str, &end, base);
     if (end < str->str + str->len) {
-      toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer");
+      toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer",
+                   self->filename, self->lineno, self->colno);
       goto cleanup;
     }
     result = toml_value_new_integer(n, &err);
@@ -1197,10 +1247,10 @@ TomlValue *toml_parse_value(TomlParser *self, TomlErr *error)
 void toml_parse_key_value(TomlParser *self, TomlTable *table, TomlErr *error)
 {
   TomlErr err = TOML_ERR_INIT;
+  TomlString *key = NULL;
+  TomlValue *value = NULL;
 
   while (self->ptr < self->end) {
-    TomlString *key = NULL;
-    TomlValue *value = NULL;
     char ch;
 
     ch = *self->ptr;
@@ -1231,7 +1281,7 @@ void toml_parse_key_value(TomlParser *self, TomlTable *table, TomlErr *error)
     } else {
       toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
                    self->filename, self->lineno, self->colno);
-      goto cleanup;
+      goto error;
     }
 
     ch = *self->ptr;
@@ -1242,13 +1292,13 @@ void toml_parse_key_value(TomlParser *self, TomlTable *table, TomlErr *error)
 
     if (self->ptr == self->end) {
       toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: unterminated key value pair");
-      goto cleanup;
+      goto error;
     }
 
     if (ch != '=') {
       toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
                    self->filename, self->lineno, self->colno);
-      goto cleanup;
+      goto error;
     }
 
     toml_move_next(self);
@@ -1261,14 +1311,14 @@ void toml_parse_key_value(TomlParser *self, TomlTable *table, TomlErr *error)
 
     if (self->ptr == self->end) {
       toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: unterminated key value pair");
-      goto cleanup;
+      goto error;
     }
 
     value = toml_parse_value(self, &err);
-    if (err.code != TOML_OK) goto cleanup;
+    if (err.code != TOML_OK) goto error;
 
-    toml_table_set(table, key, value, &err);
-    if (err.code != TOML_OK) goto cleanup;
+    toml_table_set_string(table, key, value, &err);
+    if (err.code != TOML_OK) goto error;
 
     while (self->ptr < self->end && (*self->ptr == ' ' || *self->ptr == '\t')) {
       toml_move_next(self);
@@ -1292,9 +1342,15 @@ void toml_parse_key_value(TomlParser *self, TomlTable *table, TomlErr *error)
     } else {
       toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: new line expected",
                    self->filename, self->lineno, self->colno);
-      goto cleanup;
+      goto error;
     }
   }
+
+  goto cleanup;
+
+error:
+  toml_value_free(value);
+  toml_string_free(key);
 
 cleanup:
   toml_err_move(error, &err);
@@ -1304,6 +1360,7 @@ TomlValue *toml_parse_array(TomlParser *self, TomlErr *error)
 {
   TomlErr err = TOML_ERR_INIT;
   TomlValue *array = NULL;
+  TomlValue *value = NULL;
 
   array = toml_value_new_array(&err);
   if (err.code != TOML_OK) goto cleanup;
@@ -1320,19 +1377,40 @@ TomlValue *toml_parse_array(TomlParser *self, TomlErr *error)
       toml_move_next(self);
     } else if (*self->ptr == '\n') {
       toml_move_next(self);
-    } else if (*self->ptr == ',') {
-      toml_move_next(self);
     } else if (*self->ptr == ']') {
       toml_move_next(self);
       break;
     } else {
-      TomlValue *value = toml_parse_value(self, &err);
-      if (err.code != TOML_OK) goto cleanup;
+      value = toml_parse_value(self, &err);
+      if (err.code != TOML_OK) goto error;
 
       toml_array_append(array->value.array, value, &err);
-      if (err.code != TOML_OK) goto cleanup;
+      if (err.code != TOML_OK) goto error;
+
+      while (self->ptr < self->end) {
+        if (isspace(*self->ptr)) {
+          do {
+            toml_move_next(self);
+          } while (self->ptr < self->end && isspace(*self->ptr));
+        } else if (*self->ptr == '#') {
+          do {
+            toml_move_next(self);
+          } while (self->ptr < self->end && *self->ptr != '\n');
+        } else {
+          break;
+        }
+      }
+
+      if (self->ptr < self->end && *self->ptr == ',') {
+        toml_move_next(self);
+      }
     }
   }
+
+  goto cleanup;
+
+error:
+  toml_value_free(value);
 
 cleanup:
   toml_err_move(error, &err);
@@ -1358,7 +1436,7 @@ TomlValue *toml_parse_inline_table(TomlParser *self, TomlErr *error)
       ch = *self->ptr;
     }
 
-    if (isalnum(ch) || ch == '_' || ch == '-') {
+    if (isalnum(ch) || ch == '_') {
       key = toml_parse_bare_key(self, &err);
     } else if (ch == '\"') {
       toml_move_next(self);
@@ -1407,7 +1485,7 @@ TomlValue *toml_parse_inline_table(TomlParser *self, TomlErr *error)
     value = toml_parse_value(self, &err);
     if (err.code != TOML_OK) goto cleanup;
 
-    toml_table_set(table->value.table, key, value, &err);
+    toml_table_set_string(table->value.table, key, value, &err);
     if (err.code != TOML_OK) goto cleanup;
 
     while (self->ptr < self->end && (*self->ptr == ' ' || *self->ptr == '\t')) {
@@ -1433,18 +1511,24 @@ TomlTable *toml_walk_table_path(TomlParser *parser, TomlTable *table,
 {
   TomlErr err = TOML_ERR_INIT;
   TomlTable *real_table = table;
+  TomlValue *new_table = NULL;
+  TomlValue *array = NULL;
+  TomlString *part_copy = NULL;
 
   if (is_array) {
     size_t i = 0;
     for (; i < key_path->len - 1; i++) {
       TomlString *part = key_path->elements[i]->value.string;
-      TomlValue *t = toml_table_get(real_table, part);
+      TomlValue *t = toml_table_get_string(real_table, part);
       if (t == NULL) {
-        TomlValue *new_table = toml_value_new_table(&err);
-        if (err.code != TOML_OK) goto cleanup;
+        new_table = toml_value_new_table(&err);
+        if (err.code != TOML_OK) goto error;
 
-        toml_table_set(real_table, part, new_table, &err);
-        if (err.code != TOML_OK) goto cleanup;
+        part_copy = toml_string_copy(part, &err);
+        if (err.code != TOML_OK) goto error;
+
+        toml_table_set_string(real_table, part_copy, new_table, &err);
+        if (err.code != TOML_OK) goto error;
 
         real_table = new_table->value.table;
       } else {
@@ -1453,46 +1537,52 @@ TomlTable *toml_walk_table_path(TomlParser *parser, TomlTable *table,
     }
 
     TomlString *part = key_path->elements[i]->value.string;
-    TomlValue *t = toml_table_get(real_table, part);
+    TomlValue *t = toml_table_get_string(real_table, part);
     if (t == NULL) {
       TomlValue *array = toml_value_new_array(&err);
-      if (err.code != TOML_OK) goto cleanup;
+      if (err.code != TOML_OK) goto error;
 
       TomlValue *new_table = toml_value_new_table(&err);
-      if (err.code != TOML_OK) goto cleanup;
+      if (err.code != TOML_OK) goto error;
 
       toml_array_append(array->value.array, new_table, &err);
-      if (err.code != TOML_OK) goto cleanup;
+      if (err.code != TOML_OK) goto error;
 
-      toml_table_set(real_table, part, array, &err);
-      if (err.code != TOML_OK) goto cleanup;
+      TomlString *part_copy = toml_string_copy(part, &err);
+      if (err.code != TOML_OK) goto error;
+
+      toml_table_set_string(real_table, part_copy, array, &err);
+      if (err.code != TOML_OK) goto error;
 
       real_table = new_table->value.table;
     } else {
       if (t->type != TOML_ARRAY) {
         toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: this key was not an array",
                      parser->filename, parser->lineno, parser->colno);
-        goto cleanup;
+        goto error;
       }
 
       TomlValue *new_table = toml_value_new_table(&err);
-      if (err.code != TOML_OK) goto cleanup;
+      if (err.code != TOML_OK) goto error;
 
       toml_array_append(t->value.array, new_table, &err);
-      if (err.code != TOML_OK) goto cleanup;
+      if (err.code != TOML_OK) goto error;
 
       real_table = new_table->value.table;
     }
   } else {
     for (size_t i = 0; i < key_path->len; i++) {
       TomlString *part = key_path->elements[i]->value.string;
-      TomlValue *t = toml_table_get(real_table, part);
+      TomlValue *t = toml_table_get_string(real_table, part);
       if (t == NULL) {
         TomlValue *new_table = toml_value_new_table(&err);
-        if (err.code != TOML_OK) goto cleanup;
+        if (err.code != TOML_OK) goto error;
 
-        toml_table_set(real_table, part, new_table, &err);
-        if (err.code != TOML_OK) goto cleanup;
+        TomlString *part_copy = toml_string_copy(part, &err);
+        if (err.code != TOML_OK) goto error;
+
+        toml_table_set_string(real_table, part_copy, new_table, &err);
+        if (err.code != TOML_OK) goto error;
 
         real_table = new_table->value.table;
       } else {
@@ -1504,6 +1594,13 @@ TomlTable *toml_walk_table_path(TomlParser *parser, TomlTable *table,
       }
     }
   }
+
+  goto cleanup;
+
+error:
+  toml_string_free(part_copy);
+  toml_value_free(new_table);
+  toml_value_free(array);
 
 cleanup:
   toml_err_move(error, &err);
@@ -1526,59 +1623,55 @@ void toml_parse_table(TomlParser *self, TomlTable *table, TomlErr *error)
   }
 
   while (1) {
-    TomlString *key_part = NULL;
-    TomlValue *key_part_value = NULL;
-
-    if (is_array) {
-      if (self->ptr + 2 <= self->end && *self->ptr != '\n') {
-        if (strncmp(self->ptr, "]]", 2) == 0) {
+    if (*self->ptr == ' ' || *self->ptr == '\t') {
+      do {
+        toml_move_next(self);
+      } while (*self->ptr < *self->end &&
+               (*self->ptr == ' ' || *self->ptr == '\t'));
+    } else if (*self->ptr == ']') {
+      if (is_array) {
+        if (self->ptr + 2 <= self->end && strncmp(self->ptr, "]]", 2) == 0) {
           toml_next_n(self, 2);
           break;
         }
       } else {
-        toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: unterminated name of array of tables",
-                     self->filename, self->lineno, self->colno);
-        goto cleanup;
+        toml_move_next(self);
+        break;
       }
     } else {
-      if (self->ptr < self->end && *self->ptr != '\n') {
-        if (*self->ptr == ']') {
-          toml_move_next(self);
-          break;
-        }
+      TomlString *key_part = NULL;
+      TomlValue *key_part_value = NULL;
+
+      if (isalnum(*self->ptr) || *self->ptr == '_') {
+        key_part = toml_parse_bare_key(self, &err);
+      } else if (*self->ptr == '\"') {
+        toml_move_next(self);
+        key_part = toml_parse_basic_string(self, &err);
+      } else if (*self->ptr == '\'') {
+        toml_move_next(self);
+        key_part = toml_parse_literal_string(self, &err);
       } else {
-        toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: unterminated table name",
+        toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
                      self->filename, self->lineno, self->colno);
-        goto cleanup;
       }
-    }
+      if (err.code != TOML_OK) goto cleanup;
 
-    if (isalnum(*self->ptr) || *self->ptr == '_') {
-      key_part = toml_parse_bare_key(self, &err);
-    } else if (*self->ptr == '\"') {
-      toml_move_next(self);
-      key_part = toml_parse_basic_string(self, &err);
-    } else if (*self->ptr == '\'') {
-      toml_move_next(self);
-      key_part = toml_parse_literal_string(self, &err);
-    } else {
-      toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid token",
-                   self->filename, self->lineno, self->colno);
-    }
-    if (err.code != TOML_OK) goto cleanup;
+      key_part_value = toml_value_new(TOML_STRING, &err);
+      if (err.code != TOML_OK) goto cleanup;
 
-    key_part_value = toml_value_new(TOML_STRING, &err);
-    if (err.code != TOML_OK) goto cleanup;
+      key_part_value->value.string = key_part;
 
-    key_part_value->value.string = key_part;
+      toml_array_append(key_path, key_part_value, &err);
+      if (err.code != TOML_OK) goto cleanup;
 
-    toml_array_append(key_path, key_part_value, &err);
-    if (err.code != TOML_OK) goto cleanup;
+      while (self->ptr < self->end &&
+             (*self->ptr == ' ' || *self->ptr == '\t')) {
+        toml_move_next(self);
+      }
 
-    if (self->ptr >= self->end) break;
-
-    if (*self->ptr == '.') {
-      toml_move_next(self);
+      if (self->ptr < self->end && *self->ptr == '.') {
+        toml_move_next(self);
+      }
     }
   }
 
@@ -1605,6 +1698,7 @@ void toml_parse_table(TomlParser *self, TomlTable *table, TomlErr *error)
   toml_parse_key_value(self, real_table, &err);
 
 cleanup:
+  toml_array_free(key_path);
   toml_err_move(error, &err);
 }
 
@@ -1649,9 +1743,6 @@ TomlTable *toml_parse(TomlParser *self, TomlErr *error)
   }
 
 cleanup:
-  if (err.code != TOML_OK) {
-    toml_table_free(table);
-  }
   toml_err_move(error, &err);
   return table;
 }
@@ -1669,6 +1760,7 @@ TomlTable *toml_load_nstring(const char *str, size_t len, TomlErr *error)
   if (err.code != TOML_OK) goto cleanup;
 
 cleanup:
+  toml_parser_free(parser);
   toml_err_move(error, &err);
   return table;
 }

@@ -93,13 +93,20 @@ TomlString *toml_string_new_nstring(const char *str, size_t len, TomlErr *err);
 void toml_string_append_char(TomlString *self, char ch, TomlErr *err);
 void toml_string_append_string(TomlString *self, const char *str, TomlErr *err);
 void toml_string_append_nstring(TomlString *self, const char *str, size_t len, TomlErr *err);
+TomlString *toml_string_copy(const TomlString *self, TomlErr *err);
 void toml_string_free(TomlString *self);
 bool toml_string_equals(const TomlString *self, const TomlString *other);
 
 TomlTable *toml_table_new(TomlErr *err);
 void toml_table_free(TomlTable *self);
-void toml_table_set(TomlTable *self, TomlString *key, TomlValue *value, TomlErr *err);
-TomlValue *toml_table_get(const TomlTable *self, const TomlString *key);
+
+/* TODO: impelement get/set by key path functions
+void toml_table_set(TomlTable *self, const char *key, TomlValue *value, TomlErr *err);
+void toml_table_set_n(TomlTable *self, const char *key, size_t key_len,
+                      TomlValue *value, TomlErr *err);
+TomlValue *toml_table_get(const TomlTable *self, const char *key);
+TomlValue *toml_table_get_n(const TomlTable *self, const char *key, size_t key_len);
+*/
 
 TomlTableIter *toml_table_iter_new(TomlTable *table, TomlErr *err);
 void toml_table_iter_free(TomlTableIter *self);

@@ -125,33 +125,35 @@ cleanup:
 int main(void)
 {
   static const char *const filenames[] = {
-    "example.toml",
-    "fruit.toml",
-    "hard_example.toml",
-    "hard_example_unicode.toml"
+    /* should parse */
+    PROJECT_SOURCE_DIR "/tests/key-values.toml",
+
+    /* should not parse */
+
+    /* tests from https://github.com/toml-lang/toml */
+    PROJECT_SOURCE_DIR "/tests/example.toml",
+    PROJECT_SOURCE_DIR "/tests/fruit.toml",
+    PROJECT_SOURCE_DIR "/tests/hard_example.toml",
+    PROJECT_SOURCE_DIR "/tests/hard_example_unicode.toml"
   };
 
   int total_tests = sizeof(filenames) / sizeof(char *);
-  int num_success = 0;
-  int num_fail = 0;
+  int num_passed = 0;
+  int num_failed = 0;
 
   for (int i = 0; i < total_tests; i++) {
     int rc = test_run(filenames[i]);
     if (rc == 0) {
       printf("test %d success\n", i);
-      num_success++;
+      num_passed++;
     } else {
       printf("test %d returned %d\n", i, rc);
-      num_fail++;
+      num_failed++;
     }
   }
 
-  printf("total %d tests, %d success, %d fail\n",
-         total_tests, num_success, num_fail);
+  printf("total %d tests, %d passed, %d failed\n",
+         total_tests, num_passed, num_failed);
 
-  if (num_fail > 0) {
-    return -1;
-  } else {
-    return 0;
-  }
+  return num_failed;
 }

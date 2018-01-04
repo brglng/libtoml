@@ -1,0 +1,115 @@
+# All kinds of keys and string values
+
+key1-bare-with-dash = "basic string 1"
+
+key2-bare_with_underscore = 'literal string 2'
+
+3-key-start-with-digit = "basic string \b 3 with \t space \f and\"escapes\\\n"
+
+"key 4 double quoted\n" = "basic string \rbasic string with carriage return"
+
+'key 5 single quoted' = """multi line basic string"""
+
+'key 6 multi-line basic string strip beginning new line' = """
+  There should be no new line, but two leading spaces."""
+
+'key 7 line ending backslash' = """
+lines with \
+ending backslash \
+should be concatenated into a single line and \
+
+
+    new lines and spaces after the line ending backslash should be stripped."""
+
+'key 8 multi-line basic string with escapes' = """
+Escapes \b
+ should\t
+also \f
+ work \"
+in \\
+multi-line \nbasic string."""
+
+'key 9 multi-line literal string' = '''
+The first newline is
+trimmed in raw strings.
+   All other whitespace or [(*&%$@!/\~`^#)]
+   is preserved.
+'''
+
+# Numbers, copied from README.md on https://github.com/toml-lang/toml
+
+int1 = +99
+int2 = 42
+int3 = 0
+int4 = -17
+int5 = 1_000
+int6 = 5_349_221
+int7 = 1_2_3_4_5     # VALID but discouraged
+
+# hexadecimal with prefix `0x`
+hex1 = 0xDEADBEEF
+hex2 = 0xdeadbeef
+hex3 = 0xdead_beef
+
+# octal with prefix `0o`
+oct1 = 0o01234567
+oct2 = 0o755 # useful for Unix file permissions
+oct3 = 0o0123_4567
+oct4 = 0o7_5_5
+
+# binary with prefix `0b`
+bin1 = 0b11010110
+bin2 = 0b1101_0110
+
+# fractional
+flt1 = +1.0
+flt2 = 3.1415
+flt3 = -0.01
+
+# exponent
+flt4 = 5e+22
+flt5 = 1e6
+flt6 = -2E-2
+
+# both
+flt7 = 6.626e-34
+flt8 = 9_224_617.445_991_228_313
+
+# infinity
+sf1 = inf  # positive infinity
+sf2 = +inf # positive infinity
+sf3 = -inf # negative infinity
+
+# not a number
+sf4 = nan  # actual sNaN/qNaN encoding is implementation specific
+sf5 = +nan # same as `nan`
+sf6 = -nan # valid, actual encoding is implementation specific
+
+# Boolean
+bool1 = true
+bool2 = false
+
+# Array
+arr1 = [ 1, 2, 3 ]
+arr2 = [ "red", "yellow", "green" ]
+arr3 = [ [ 1, 2 ], [3, 4, 5] ]
+arr4 = [ "all", 'strings', """are the same""", '''type''']
+arr5 = [ [ 1, 2 ], ["a", "b", "c"] ]
+
+#arr6 = [ 1, 2.0 ] # INVALID
+
+arr7 = [
+  1, 2, 3
+]
+
+arr8 = [
+  1,
+  2, # this is ok
+]
+
+# Inline tables
+name = { first = "Tom", last = "Preston-Werner" }
+point = { x = 1, y = 2 }
+points = [ { x = 1, y = 2, z = 3 },
+           { x = 7, y = 8, z = 9 },
+           { x = 2, y = 4, z = 8 } ]

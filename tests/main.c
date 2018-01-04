@@ -127,6 +127,7 @@ int main(void)
   static const char *const filenames[] = {
     /* should parse */
     PROJECT_SOURCE_DIR "/tests/key-values.toml",
+    PROJECT_SOURCE_DIR "/tests/complex-structure.toml",
 
     /* should not parse */
 

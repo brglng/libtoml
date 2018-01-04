@@ -88,10 +88,10 @@ cleanup:
 # TODO
 
 - [x] Add CMake support
-- [ ] Add more tests
-- [ ] Table get() API with path support
-- [ ] Date-time support
+- [x] Add more tests
+- [ ] Table set()/get() API with path support
 - [ ] Unicode escape sequence support
+- [ ] Date-time support
 - [ ] Encoding
 - [ ] JSON encoding
 - [ ] Documentation

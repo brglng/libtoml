@@ -30,3 +30,6 @@ jj = 10
 
 [b.a]
 kk = 11
+
+[this.is-a."complex" .   'table' . name]
+ok = true

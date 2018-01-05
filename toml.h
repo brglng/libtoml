@@ -14,12 +14,13 @@ extern "C" {
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 
 enum {
   TOML_OK,
   TOML_ERR,
-  TOML_ERR_MEM,
   TOML_ERR_IO,
+  TOML_ERR_NOMEM,
   TOML_ERR_SYNTAX,
 };
 
@@ -28,16 +29,6 @@ typedef struct {
   char *message;
   bool _is_literal;
 } TomlErr;
-
-typedef enum {
-  TOML_TABLE,
-  TOML_ARRAY,
-  TOML_STRING,
-  TOML_INTEGER,
-  TOML_FLOAT,
-  TOML_DATETIME,
-  TOML_BOOLEAN,
-} TomlType;
 
 typedef struct {
   char      *str;
@@ -61,15 +52,31 @@ typedef struct {
 typedef struct _TomlTable TomlTable;
 typedef struct _TomlTableIter TomlTableIter;
 
+typedef struct {
+  struct tm     tm;
+  double        sec_frac;
+} TomlDateTime;
+
+typedef enum {
+  TOML_TABLE,
+  TOML_ARRAY,
+  TOML_STRING,
+  TOML_INTEGER,
+  TOML_FLOAT,
+  TOML_DATETIME,
+  TOML_BOOLEAN,
+} TomlType;
+
 struct _TomlValue {
   TomlType  type;
   union {
-    TomlTable   *table;
-    TomlArray   *array;
-    TomlString  *string;
-    int64_t     integer;
-    double      float_;
-    bool        boolean;
+    TomlTable       *table;
+    TomlArray       *array;
+    TomlString      *string;
+    int64_t         integer;
+    double          float_;
+    TomlDateTime    *datetime;
+    bool            boolean;
   } value;
 };
 
@@ -126,6 +133,7 @@ TomlValue *toml_value_new_table(TomlErr *err);
 TomlValue *toml_value_new_array(TomlErr *err);
 TomlValue *toml_value_new_integer(int64_t integer, TomlErr *err);
 TomlValue *toml_value_new_float(double flt, TomlErr *err);
+TomlValue *toml_value_new_datetime(TomlErr *err);
 TomlValue *toml_value_new_boolean(bool boolean, TomlErr *err);
 void toml_value_free(TomlValue *self);
 

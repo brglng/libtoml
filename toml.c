@@ -143,7 +143,7 @@ TomlString *toml_string_new(TomlErr *error)
 {
   TomlString *self = malloc(sizeof(TomlString));
   if (self == NULL) {
-    toml_set_err_literal(error, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(error, TOML_ERR_NOMEM, "out of memory");
     return NULL;
   }
 
@@ -195,7 +195,7 @@ void toml_string_check_expand(TomlString *self, size_t len_to_add, TomlErr *erro
     new_capacity = new_capacity >= 8 ? new_capacity : 8;
     void *p = realloc(self->str, new_capacity);
     if (p == NULL) {
-      toml_set_err_literal(error, TOML_ERR_MEM, "out of memory");
+      toml_set_err_literal(error, TOML_ERR_NOMEM, "out of memory");
       return;
     }
     self->str = p;
@@ -303,7 +303,7 @@ TomlTable *toml_table_new(TomlErr *err)
 {
   TomlTable *self = malloc(sizeof(TomlTable));
   if (self == NULL) {
-    toml_set_err_literal(err, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(err, TOML_ERR_NOMEM, "out of memory");
   } else {
     self->keyvals = NULL;
     self->len = 0;
@@ -330,7 +330,7 @@ void toml_table_check_expand(TomlTable *self, TomlErr *err)
     size_t new_capacity = self->capacity > 0 ? self->capacity * 2 : 8;
     void *p = realloc(self->keyvals, sizeof(TomlKeyValue) * new_capacity);
     if (p == NULL) {
-      toml_set_err_literal(err, TOML_ERR_MEM, "out of memory");
+      toml_set_err_literal(err, TOML_ERR_NOMEM, "out of memory");
       return;
     }
     self->keyvals = p;
@@ -422,7 +422,7 @@ TomlTableIter *toml_table_iter_new(TomlTable *table, TomlErr *error)
 {
   TomlTableIter *self = malloc(sizeof(TomlTableIter));
   if (self == NULL) {
-    toml_set_err_literal(error, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(error, TOML_ERR_NOMEM, "out of memory");
     return NULL;
   }
   self->table = table;
@@ -460,7 +460,7 @@ TomlArray *toml_array_new(TomlErr *error)
 {
   TomlArray *self = malloc(sizeof(TomlArray));
   if (self == NULL) {
-    toml_set_err_literal(error, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(error, TOML_ERR_NOMEM, "out of memory");
     return NULL;
   }
 
@@ -487,7 +487,7 @@ void toml_array_check_expand(TomlArray *self, TomlErr *error)
     size_t new_capacity = self->_capacity > 0 ? self->_capacity * 2 : 8;
     void *p = realloc(self->elements, sizeof(TomlValue *) * new_capacity);
     if (p == NULL) {
-      toml_set_err_literal(error, TOML_ERR_MEM, "out of memory");
+      toml_set_err_literal(error, TOML_ERR_NOMEM, "out of memory");
       return;
     }
     self->elements = p;
@@ -514,7 +514,7 @@ TomlValue *toml_value_new(TomlType type, TomlErr *error)
 
   TomlValue *self = malloc(sizeof(TomlValue));
   if (self == NULL) {
-    toml_set_err_literal(&err, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(&err, TOML_ERR_NOMEM, "out of memory");
     goto cleanup;
   }
 
@@ -525,8 +525,13 @@ TomlValue *toml_value_new(TomlType type, TomlErr *error)
   case TOML_STRING:     self->value.string = NULL;      break;
   case TOML_INTEGER:    self->value.integer = 0;        break;
   case TOML_FLOAT:      self->value.float_ = 0.0;       break;
-  case TOML_DATETIME:                                   break;
   case TOML_BOOLEAN:    self->value.boolean = false;    break;
+  case TOML_DATETIME:
+    self->value.datetime = calloc(1, sizeof(TomlDateTime));
+    if (self->value.datetime == NULL) {
+      toml_set_err(error, TOML_ERR_NOMEM, "out of memory");
+    }
+    break;
   }
 
 cleanup:
@@ -540,7 +545,7 @@ TomlValue *toml_value_new_string(const char *str, TomlErr *error)
 
   TomlValue *self = malloc(sizeof(TomlValue));
   if (self == NULL) {
-    toml_set_err_literal(&err, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(&err, TOML_ERR_NOMEM, "out of memory");
     goto cleanup;
   }
 
@@ -564,7 +569,7 @@ TomlValue *toml_value_new_nstring(const char *str, size_t len, TomlErr *error)
 
   TomlValue *self = malloc(sizeof(TomlValue));
   if (self == NULL) {
-    toml_set_err_literal(&err, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(&err, TOML_ERR_NOMEM, "out of memory");
     goto cleanup;
   }
 
@@ -588,7 +593,7 @@ TomlValue *toml_value_new_table(TomlErr *error)
 
   TomlValue *self = malloc(sizeof(TomlValue));
   if (self == NULL) {
-    toml_set_err_literal(&err, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(&err, TOML_ERR_NOMEM, "out of memory");
     goto cleanup;
   }
 
@@ -612,7 +617,7 @@ TomlValue *toml_value_new_array(TomlErr *error)
 
   TomlValue *self = malloc(sizeof(TomlValue));
   if (self == NULL) {
-    toml_set_err_literal(&err, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(&err, TOML_ERR_NOMEM, "out of memory");
     goto cleanup;
   }
 
@@ -636,7 +641,7 @@ TomlValue *toml_value_new_integer(int64_t integer, TomlErr *error)
 
   TomlValue *self = malloc(sizeof(TomlValue));
   if (self == NULL) {
-    toml_set_err_literal(&err, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(&err, TOML_ERR_NOMEM, "out of memory");
     goto cleanup;
   }
 
@@ -654,7 +659,7 @@ TomlValue *toml_value_new_float(double float_, TomlErr *error)
 
   TomlValue *self = malloc(sizeof(TomlValue));
   if (self == NULL) {
-    toml_set_err_literal(&err, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(&err, TOML_ERR_NOMEM, "out of memory");
     goto cleanup;
   }
 
@@ -666,13 +671,18 @@ cleanup:
   return self;
 }
 
+TomlValue *toml_value_new_datetime(TomlErr *error)
+{
+  return toml_value_new(TOML_DATETIME, error);
+}
+
 TomlValue *toml_value_new_boolean(bool boolean, TomlErr *error)
 {
   TomlErr err = TOML_ERR_INIT;
 
   TomlValue *self = malloc(sizeof(TomlValue));
   if (self == NULL) {
-    toml_set_err_literal(&err, TOML_ERR_MEM, "out of memory");
+    toml_set_err_literal(&err, TOML_ERR_NOMEM, "out of memory");
     goto cleanup;
   }
 
@@ -691,6 +701,7 @@ void toml_value_free(TomlValue *self)
     case TOML_STRING:   toml_string_free(self->value.string);   break;
     case TOML_TABLE:    toml_table_free(self->value.table);     break;
     case TOML_ARRAY:    toml_array_free(self->value.array);     break;
+    case TOML_DATETIME: free(self->value.datetime);             break;
     default:                                                    break;
     }
     free(self);

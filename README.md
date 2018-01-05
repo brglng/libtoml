@@ -91,6 +91,7 @@ cleanup:
 - [x] Add more tests
 - [x] Unicode escape sequence support
 - [ ] Date-time support
+- [ ] Travis CI support
 - [ ] Encoding
 - [ ] JSON encoding
 - [ ] Documentation

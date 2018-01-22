@@ -12,9 +12,15 @@ extern "C" {
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <time.h>
+
+#define TOML_FALSE  0
+#define TOML_TRUE   1
+
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
+#define TOML_CONST const
+#else
+#define TOML_CONST
+#endif
 
 enum {
   TOML_OK,
@@ -25,9 +31,9 @@ enum {
 };
 
 typedef struct {
-  int code;
-  char *message;
-  bool _is_literal;
+  int   code;
+  char  *message;
+  int   _is_literal;
 } TomlErr;
 
 typedef struct {
@@ -53,8 +59,14 @@ typedef struct _TomlTable TomlTable;
 typedef struct _TomlTableIter TomlTableIter;
 
 typedef struct {
-  struct tm     tm;
-  double        sec_frac;
+  int       year;
+  int       month;
+  int       day;
+  int       hour;
+  int       minute;
+  double    second;
+  int       offset_hour;
+  int       offset_minute;
 } TomlDateTime;
 
 typedef enum {
@@ -73,53 +85,57 @@ struct _TomlValue {
     TomlTable       *table;
     TomlArray       *array;
     TomlString      *string;
-    int64_t         integer;
+#if defined(_MSC_VER)
+    long long       integer;
+#else
+    long            integer;
+#endif
     double          float_;
     TomlDateTime    *datetime;
-    bool            boolean;
+    int             boolean;
   } value;
 };
 
-char *toml_strdup(const char *str);
-char *toml_strndup(const char *str, size_t n);
-int toml_vasprintf(char **str, const char *format, va_list args);
-int toml_asprintf(char **str, const char *format, ...);
+char *toml_strdup(TOML_CONST char *str);
+char *toml_strndup(TOML_CONST char *str, size_t n);
+int toml_vasprintf(char **str, TOML_CONST char *format, va_list args);
+int toml_asprintf(char **str, TOML_CONST char *format, ...);
 
-#define TOML_ERR_INIT {TOML_OK, NULL, false}
+#define TOML_ERR_INIT {TOML_OK, NULL, TOML_FALSE}
 
 void toml_err_init(TomlErr *err);
 void toml_clear_err(TomlErr *err);
 void toml_err_move(TomlErr *to, TomlErr *from);
-void toml_set_err_v(TomlErr *err, int code, const char *format, va_list args);
-void toml_set_err(TomlErr *err, int code, const char *format, ...);
-void toml_set_err_literal(TomlErr *err, int code, const char *message);
+void toml_set_err_v(TomlErr *err, int code, TOML_CONST char *format, va_list args);
+void toml_set_err(TomlErr *err, int code, TOML_CONST char *format, ...);
+void toml_set_err_literal(TomlErr *err, int code, TOML_CONST char *message);
 
 TomlString *toml_string_new(TomlErr *err);
-TomlString *toml_string_new_string(const char *str, TomlErr *err);
-TomlString *toml_string_new_nstring(const char *str, size_t len, TomlErr *err);
+TomlString *toml_string_new_string(TOML_CONST char *str, TomlErr *err);
+TomlString *toml_string_new_nstring(TOML_CONST char *str, size_t len, TomlErr *err);
 void toml_string_append_char(TomlString *self, char ch, TomlErr *err);
-void toml_string_append_string(TomlString *self, const char *str, TomlErr *err);
-void toml_string_append_nstring(TomlString *self, const char *str, size_t len, TomlErr *err);
-TomlString *toml_string_copy(const TomlString *self, TomlErr *err);
+void toml_string_append_string(TomlString *self, TOML_CONST char *str, TomlErr *err);
+void toml_string_append_nstring(TomlString *self, TOML_CONST char *str, size_t len, TomlErr *err);
+TomlString *toml_string_copy(TOML_CONST TomlString *self, TomlErr *err);
 void toml_string_free(TomlString *self);
-bool toml_string_equals(const TomlString *self, const TomlString *other);
+int toml_string_equals(TOML_CONST TomlString *self, TOML_CONST TomlString *other);
 
 TomlTable *toml_table_new(TomlErr *err);
 void toml_table_free(TomlTable *self);
 
 void toml_table_set_by_string(TomlTable *self, TomlString *key,
                               TomlValue *value, TomlErr *err);
-TomlValue *toml_table_get_by_string(const TomlTable *self, const TomlString *key);
-void toml_table_set(TomlTable *self, const char *key, TomlValue *value, TomlErr *err);
-void toml_table_setn(TomlTable *self, const char *key, size_t key_len,
+TomlValue *toml_table_get_by_string(TOML_CONST TomlTable *self, TOML_CONST TomlString *key);
+void toml_table_set(TomlTable *self, TOML_CONST char *key, TomlValue *value, TomlErr *err);
+void toml_table_setn(TomlTable *self, TOML_CONST char *key, size_t key_len,
                       TomlValue *value, TomlErr *err);
-TomlValue *toml_table_get(const TomlTable *self, const char *key);
-TomlValue *toml_table_getn(const TomlTable *self, const char *key, size_t key_len);
+TomlValue *toml_table_get(TOML_CONST TomlTable *self, TOML_CONST char *key);
+TomlValue *toml_table_getn(TOML_CONST TomlTable *self, TOML_CONST char *key, size_t key_len);
 
 TomlTableIter *toml_table_iter_new(TomlTable *table, TomlErr *err);
 void toml_table_iter_free(TomlTableIter *self);
 TomlKeyValue *toml_table_iter_get(TomlTableIter *self);
-bool toml_table_iter_has_next(TomlTableIter *self);
+int toml_table_iter_has_next(TomlTableIter *self);
 void toml_table_iter_next(TomlTableIter *self);
 
 TomlArray *toml_array_new(TomlErr *err);
@@ -127,25 +143,29 @@ void toml_array_free(TomlArray *self);
 void toml_array_append(TomlArray *self, TomlValue *value, TomlErr *err);
 
 TomlValue *toml_value_new(TomlType type, TomlErr *err);
-TomlValue *toml_value_new_string(const char *str, TomlErr *err);
-TomlValue *toml_value_new_nstring(const char *str, size_t len, TomlErr *err);
+TomlValue *toml_value_new_string(TOML_CONST char *str, TomlErr *err);
+TomlValue *toml_value_new_nstring(TOML_CONST char *str, size_t len, TomlErr *err);
 TomlValue *toml_value_new_table(TomlErr *err);
 TomlValue *toml_value_new_array(TomlErr *err);
-TomlValue *toml_value_new_integer(int64_t integer, TomlErr *err);
+#if defined(_MSC_VER)
+TomlValue *toml_value_new_integer(long long integer, TomlErr *err);
+#else
+TomlValue *toml_value_new_integer(long integer, TomlErr *err);
+#endif
 TomlValue *toml_value_new_float(double flt, TomlErr *err);
 TomlValue *toml_value_new_datetime(TomlErr *err);
-TomlValue *toml_value_new_boolean(bool boolean, TomlErr *err);
+TomlValue *toml_value_new_boolean(int boolean, TomlErr *err);
 void toml_value_free(TomlValue *self);
 
-TomlTable *toml_load_string(const char *str, TomlErr *err);
-TomlTable *toml_load_nstring(const char *str, size_t len, TomlErr *err);
+TomlTable *toml_load_string(TOML_CONST char *str, TomlErr *err);
+TomlTable *toml_load_nstring(TOML_CONST char *str, size_t len, TomlErr *err);
 TomlTable *toml_load_file(FILE *file, TomlErr *err);
-TomlTable *toml_load_filename(const char *filename, TomlErr *err);
+TomlTable *toml_load_filename(TOML_CONST char *filename, TomlErr *err);
 
 /* TODO: implement dump functions
-char *toml_dump_string(const TomlTable *self, TomlErr *err);
-TomlString *toml_dump_nstring(const TomlTable *self, TomlErr *err);
-void toml_dump_file(const TomlTable *self, FILE *file, TomlErr *err);
+char *toml_dump_string(TOML_CONST TomlTable *self, TomlErr *err);
+TomlString *toml_dump_nstring(TOML_CONST TomlTable *self, TomlErr *err);
+void toml_dump_file(TOML_CONST TomlTable *self, FILE *file, TomlErr *err);
 */
 
 #ifdef __cplusplus

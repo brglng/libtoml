@@ -90,7 +90,9 @@ cleanup:
 - [x] Add CMake support
 - [x] Add more tests
 - [x] Unicode escape sequence support
+- [ ] Array type checking
 - [ ] Date-time support
+- [ ] C89 support?
 - [ ] Travis CI support
 - [ ] Encoding
 - [ ] JSON encoding

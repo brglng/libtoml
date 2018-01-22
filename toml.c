@@ -803,13 +803,13 @@ char toml_hex_char_to_int(char ch)
   } else if (isupper(ch)) {
     return ch - 'A' + 10;
   }
-  assert(TOML_FALSE);
+  return 0;
 }
 
 void toml_encode_unicode_scalar(TomlString *result, TomlParser *parser, int n, TomlErr *error)
 {
   TomlErr err = TOML_ERR_INIT;
-  uint32_t scalar = 0;
+  unsigned int scalar = 0;
 
   if (parser->ptr + n > parser->end) {
     toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid unicode scalar",
@@ -1270,7 +1270,7 @@ TomlValue *toml_parse_int_or_float_or_time(TomlParser *self, TomlErr *error)
 
   if (type == 'i') {
     char *end = NULL;
-    int64_t n = strtoll(str->str, &end, base);
+    long long n = strtoll(str->str, &end, base);
     if (end < str->str + str->len) {
       toml_set_err(&err, TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer",
                    self->filename, self->lineno, self->colno);

@@ -24,65 +24,34 @@ On Windows:
 
 # Usage
 
-Basic parsing:
-
+Load from a file using a filename:
 ```c
   TomlErr err = TOML_ERR_INIT;
-  TomlTable *table = NULL;
-  TomlTableIter *it = NULL;
+  TomlTable *table = toml_load_filename("path/to/my/file.toml", &err);
+  if (err.code == TOML_OK) {
+    TomlTableIter *it = toml_table_iter_new(table, &err);
+    if (err.code == TOML_OK) {
+      while (toml_table_iter_has_next(it)) {
+        TomlKeyValue *keyval = toml_table_iter_get(it);
 
-  /* load from a file using filename */
-  table = toml_load_filename("path/to/my/file.toml", &err);
+        /* do something */
 
-  /* load from a FILE* */
-
-  /* open with "rb" is required */
-  FILE *f = fopen("path/to/my/file.toml", "rb");
-  table = toml_load_file(f, &err);
-
-  /* you can close the file after parsing */
-  fclose(f);
-
-  /* load from string */
-  table = toml_load_string("[table1]\na = 1", &err);
-
-  /* load from counted string */
-  const char str[] = "[table1]\na = 1";
-  table = toml_load_nstring(str, sizeof(str) - 1, &err);
-
-  /* error handling */
-  if (err.code != TOML_OK) goto cleanup;
-
-  /* iterate through the table */
-  it = toml_table_iter_new(table, &err);
-  if (err.code != TOML_OK) goto cleanup;
-
-  while (toml_table_iter_has_next(it)) {
-    TomlKeyValue *keyval = toml_table_iter_get(it);
-
-    /* do something */
-
-    toml_table_iter_next(it);
-  }
-
-cleanup:
-  if (err.code != TOML_OK) {
+        toml_table_iter_next(it);
+      }
+      toml_table_iter_free(it);
+    }
+    toml_table_free(table);
+  } else {
     fprintf("toml: %d: %s\n", err.code, err.message);
+
+    /*
+     * There can be memory leak without toml_err_clear().
+     *
+     * If error occurred, you must call toml_err_clear() before the next call
+     * who has a TomlErr * parameter, or there will be an assertion failure.
+     */
+    toml_err_clear(&err);
   }
-
-  /* free the iterator */
-  toml_table_iter_free(it);
-
-  /* free the table */
-  toml_table_free(table);
-
-  /*
-   * There can be memory leak without toml_err_clear().
-   *
-   * If error occurred, you must call toml_err_clear() before the next call
-   * who has a TomlErr * parameter, or there will be an assertion failure.
-   */
-  toml_err_clear(&err);
 ```
 
 # TODO

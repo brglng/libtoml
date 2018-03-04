@@ -1972,7 +1972,7 @@ TomlTable *toml_load_filename(TOML_CONST char *filename, TomlErr *error)
   TomlTable *table = NULL;
   FILE *f = NULL;
 
-  f = fopen(filename, "rb");
+  f = fopen(filename, "r");
   if (f == NULL) {
     toml_set_err(&err, TOML_ERR_IO, "cannot open file: %s", filename);
     goto cleanup;

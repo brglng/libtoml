@@ -42,7 +42,7 @@ Load from a file using a filename:
     }
     toml_table_free(table);
   } else {
-    fprintf("toml: %d: %s\n", err.code, err.message);
+    printf("toml: %d: %s\n", err.code, err.message);
 
     /*
      * There can be memory leak without toml_err_clear().
@@ -50,7 +50,7 @@ Load from a file using a filename:
      * If error occurred, you must call toml_err_clear() before the next call
      * who has a TomlErr * parameter, or there will be an assertion failure.
      */
-    toml_err_clear(&err);
+    toml_clear_err(&err);
   }
 ```
 

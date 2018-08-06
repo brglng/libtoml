@@ -1300,13 +1300,13 @@ cleanup:
 
 TomlValue *toml_parse_bool(TomlParser *self, TomlErr *error)
 {
-  if (self->ptr + 4 <= self->end && strncmp(self->ptr, "TOML_TRUE", 4) == 0 &&
+  if (self->ptr + 4 <= self->end && strncmp(self->ptr, "true", 4) == 0 &&
       (self->ptr + 4 == self->end || isspace(*(self->ptr + 4)))) {
     toml_next_n(self, 4);
     return toml_value_new_boolean(TOML_TRUE, error);
   }
 
-  if (self->ptr + 5 <= self->end && strncmp(self->ptr, "TOML_FALSE", 5) == 0 &&
+  if (self->ptr + 5 <= self->end && strncmp(self->ptr, "false", 5) == 0 &&
       (self->ptr + 5 == self->end || isspace(*(self->ptr + 5)))) {
     toml_next_n(self, 5);
     return toml_value_new_boolean(TOML_FALSE, error);

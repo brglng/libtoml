@@ -42,7 +42,7 @@ Load from a file using a filename:
     }
     toml_table_free(table);
   } else {
-    printf("toml: %d: %s\n", err.code, err.message);
+    fprintf(stderr, "toml: %d: %s\n", err.code, err.message);
 
     /*
      * There can be memory leak without toml_err_clear().

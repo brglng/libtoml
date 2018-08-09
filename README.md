@@ -61,6 +61,10 @@ Load from a file using a filename:
 - [x] Unicode escape sequence support
 - [ ] Array type checking
 - [ ] Date-time support
+- [ ] I/O errors reporing
+- [ ] Parsing while reading support
+- [ ] Custom allocator support
+- [ ] Algebraic structures for error handling
 - [ ] C89 support?
 - [ ] Travis CI support
 - [ ] Encoding

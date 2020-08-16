@@ -56,17 +56,14 @@ Load from a file using a filename:
 
 # TODO
 
-- [x] Add CMake support
-- [x] Add more tests
-- [x] Unicode escape sequence support
-- [ ] Array type checking
+- [ ] Update to 0.5.0 spec
+- [ ] Array invariance checking
 - [ ] Date-time support
 - [ ] I/O errors reporing
 - [ ] Parsing while reading support
 - [ ] Custom allocator support
-- [ ] Algebraic structures for error handling
-- [ ] C89 support?
+- [ ] Use thread local `TomlErr*` for error handling
 - [ ] Travis CI support
 - [ ] Encoding
-- [ ] JSON encoding
+- [ ] Encoding to JSON
 - [ ] Documentation

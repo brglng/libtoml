@@ -16,17 +16,13 @@ struct _TomlTable {
     size_t          capacity;
 };
 
-struct _TomlTableIter {
-    TomlTable*      table;
-    TomlKeyValue*   keyval;
-};
-
 static pthread_key_t g_err_key;
 static pthread_once_t g_err_once;
 
 static void* toml_default_aligned_alloc(void *context, size_t alignment, size_t size)
 {
     (void)context;
+    alignment = (alignment + sizeof(void*) - 1) & ~(sizeof(void*) - 1);
 #ifdef _WIN32
     void *p = _aligned_malloc(size, alignment);
     assert(p != NULL);
@@ -65,6 +61,21 @@ void toml_set_allocator(void *context, TOML_CONST TomlAllocFuncs *funcs)
 {
     g_alloc_context = context;
     g_alloc_funcs = funcs;
+}
+
+void* toml_aligned_alloc(size_t alignment, size_t size)
+{
+    return g_alloc_funcs->aligned_alloc(g_alloc_context, alignment, size);
+}
+
+void* toml_realloc(void *p, size_t size)
+{
+    return g_alloc_funcs->realloc(g_alloc_context, p, size);
+}
+
+void toml_free(void *p)
+{
+    g_alloc_funcs->free(g_alloc_context, p);
 }
 
 char* toml_strdup(TOML_CONST char *str)
@@ -209,14 +220,14 @@ TomlString *toml_string_new(void)
     return self;
 }
 
-TomlString *toml_string_from_str(TOML_CONST char *str)
+TomlString *toml_string_new_from_str(TOML_CONST char *str)
 {
     TomlString *self = toml_string_new();
     toml_string_append_str(self, str);
     return self;
 }
 
-TomlString *toml_string_from_nstr(TOML_CONST char *str, size_t len)
+TomlString *toml_string_new_from_nstr(TOML_CONST char *str, size_t len)
 {
     TomlString *self = toml_string_new();
     toml_string_append_nstr(self, str, len);
@@ -269,7 +280,7 @@ void toml_string_free(TomlString *self)
 
 TomlString *toml_string_clone(TOML_CONST TomlString *self)
 {
-    return toml_string_from_nstr(self->str, self->len);
+    return toml_string_new_from_nstr(self->str, self->len);
 }
 
 int toml_string_equals(TOML_CONST TomlString *self, TOML_CONST TomlString *other)
@@ -386,22 +397,22 @@ TomlTableIter toml_table_iter_new(TomlTable *table)
 
 TomlKeyValue* toml_table_iter_get(TomlTableIter *self)
 {
-    return self->keyval;
+    return self->_keyval;
 }
 
 int toml_table_iter_has_next(TomlTableIter *self)
 {
-    return self->keyval != NULL;
+    return self->_keyval != NULL;
 }
 
 void toml_table_iter_next(TomlTableIter *self)
 {
-    if (self->keyval < self->table->keyvals + self->table->len) {
-        self->keyval++;
+    if (self->_keyval < self->_table->keyvals + self->_table->len) {
+        self->_keyval++;
     }
 
-    if (self->keyval >= self->table->keyvals + self->table->len) {
-        self->keyval = NULL;
+    if (self->_keyval >= self->_table->keyvals + self->_table->len) {
+        self->_keyval = NULL;
     }
 }
 

@@ -57,6 +57,7 @@ target_include_directories(${PROJECT_NAME}
   PRIVATE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
   )
+target_link_libraries(${PROJECT_NAME} pthread)
 
 export(TARGETS toml NAMESPACE toml FILE tomlTargets.cmake)
 

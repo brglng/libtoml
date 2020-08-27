@@ -54,7 +54,11 @@ typedef struct {
 typedef struct _TomlKeyValue TomlKeyValue;
 
 typedef struct _TomlTable TomlTable;
-typedef struct _TomlTableIter TomlTableIter;
+
+typedef struct {
+    TomlTable*      _table;
+    TomlKeyValue*   _keyval;
+} TomlTableIter;
 
 typedef struct {
     int     year;
@@ -107,9 +111,9 @@ typedef struct {
 
 void toml_set_allocator(void *context, TOML_CONST TomlAllocFuncs *funcs);
 
-void *toml_aligned_alloc(size_t alignment, size_t size);
-void *toml_realloc(void *p, size_t size);
-void *toml_free(void *p);
+void* toml_aligned_alloc(size_t alignment, size_t size);
+void* toml_realloc(void *p, size_t size);
+void toml_free(void *p);
 
 #ifdef __cplusplus
 #define TOML_ALIGNOF(type) alignof(type)

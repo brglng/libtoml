@@ -41,11 +41,9 @@ if (table != NULL) {
     fprintf(stderr, "toml: %d: %s\n", toml_err()->code, toml_err()->message);
 
     /*
-    * There can be memory leak without toml_clear_err().
-    *
-    * If error occurred, you must call toml_clear_err() before the next call
-    * which can produce an error, or there can be an assertion failure.
-    */
+     * If error occurred, toml_clear_err() must be called before the next call
+     * which can produce an error, or there can be an assertion failure.
+     */
     toml_clear_err();
 }
 ```

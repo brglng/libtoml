@@ -26,32 +26,30 @@ On Windows:
 
 Load from a file using a filename:
 ```c
-  TomlErr err = TOML_ERR_INIT;
-  TomlTable *table = toml_load_filename("path/to/my/file.toml", &err);
-  if (err.code == TOML_OK) {
-    TomlTableIter *it = toml_table_iter_new(table, &err);
+TomlTable *table = toml_load_filename("path/to/my/file.toml");
+if (table != NULL) {
+    TomlTableIter it = toml_table_iter_new(table);
     if (err.code == TOML_OK) {
-      while (toml_table_iter_has_next(it)) {
-        TomlKeyValue *keyval = toml_table_iter_get(it);
+        while (toml_table_iter_has_next(&it)) {
+            TomlKeyValue *keyval = toml_table_iter_get(&it);
 
-        /* do something */
+            /* do something */
 
-        toml_table_iter_next(it);
-      }
-      toml_table_iter_free(it);
+            toml_table_iter_next(&it);
+        }
     }
     toml_table_free(table);
-  } else {
-    fprintf(stderr, "toml: %d: %s\n", err.code, err.message);
+} else {
+    fprintf(stderr, "toml: %d: %s\n", toml_err()->code, toml_err()->message);
 
     /*
-     * There can be memory leak without toml_err_clear().
-     *
-     * If error occurred, you must call toml_err_clear() before the next call
-     * who has a TomlErr * parameter, or there will be an assertion failure.
-     */
-    toml_clear_err(&err);
-  }
+    * There can be memory leak without toml_clear_err().
+    *
+    * If error occurred, you must call toml_clear_err() before the next call
+    * which can produce an error, or there can be an assertion failure.
+    */
+    toml_clear_err();
+}
 ```
 
 # TODO
@@ -59,10 +57,7 @@ Load from a file using a filename:
 - [ ] Update to 0.5.0 spec
 - [ ] Array invariance checking
 - [ ] Date-time support
-- [ ] I/O errors reporing
-- [ ] Parsing while reading support
-- [ ] Custom allocator support
-- [ ] Use thread local `TomlErr*` for error handling
+- [ ] Support parsing while reading
 - [ ] Travis CI support
 - [ ] Encoding
 - [ ] Encoding to JSON

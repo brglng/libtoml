@@ -12,6 +12,7 @@ extern "C" {
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define TOML_FALSE  0
 #define TOML_TRUE   1
@@ -60,17 +61,6 @@ typedef struct {
     TomlKeyValue*   _keyval;
 } TomlTableIter;
 
-typedef struct {
-    int     year;
-    int     month;
-    int     day;
-    int     hour;
-    int     minute;
-    double  second;
-    int     offset_hour;
-    int     offset_minute;
-} TomlDateTime;
-
 typedef enum {
     TOML_TABLE,
     TOML_ARRAY,
@@ -93,8 +83,8 @@ struct _TomlValue {
         long            integer;
 #endif
         double          float_;
-        TomlDateTime*   datetime;
-        int            boolean;
+        struct tm       datetime;
+        int             boolean;
     } value;
 };
 

@@ -476,8 +476,7 @@ TomlValue *toml_value_new(TomlType type)
             self->value.boolean = TOML_FALSE;    
             break;
         case TOML_DATETIME:
-            self->value.datetime = TOML_NEW(TomlDateTime);
-            memset(&self->value.datetime, 0, sizeof(TomlDateTime));
+            memset(&self->value.datetime, 0, sizeof(struct tm));
             break;
     }
     return self;

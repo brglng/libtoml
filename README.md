@@ -29,14 +29,12 @@ Load from a file using a filename:
 TomlTable *table = toml_load_filename("path/to/my/file.toml");
 if (table != NULL) {
     TomlTableIter it = toml_table_iter_new(table);
-    if (err.code == TOML_OK) {
-        while (toml_table_iter_has_next(&it)) {
-            TomlKeyValue *keyval = toml_table_iter_get(&it);
+    while (toml_table_iter_has_next(&it)) {
+        TomlKeyValue *keyval = toml_table_iter_get(&it);
 
-            /* do something */
+        /* do something */
 
-            toml_table_iter_next(&it);
-        }
+        toml_table_iter_next(&it);
     }
     toml_table_free(table);
 } else {

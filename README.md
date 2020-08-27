@@ -54,7 +54,7 @@ if (table != NULL) {
 
 # TODO
 
-- [ ] Update to 0.5.0 spec
+- [ ] Update to TOML v1.0 spec
 - [ ] Array invariance checking
 - [ ] Date-time support
 - [ ] Support parsing while reading

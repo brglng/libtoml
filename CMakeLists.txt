@@ -60,6 +60,7 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} pthread)
 
 export(TARGETS toml NAMESPACE toml FILE tomlTargets.cmake)
+export(PACKAGE toml)
 
 install(
   TARGETS ${PROJECT_NAME}

@@ -58,9 +58,9 @@ target_include_directories(${PROJECT_NAME}
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
   )
 target_link_libraries(${PROJECT_NAME} pthread)
+add_library(toml::toml ALIAS toml)
 
 export(TARGETS toml NAMESPACE toml FILE tomlTargets.cmake)
-export(PACKAGE toml)
 
 install(
   TARGETS ${PROJECT_NAME}

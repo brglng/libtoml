@@ -54,7 +54,11 @@ typedef struct {
 
 typedef struct _TomlKeyValue TomlKeyValue;
 
-typedef struct _TomlTable TomlTable;
+typedef struct {
+    size_t          _capacity;
+    size_t          len;
+    TomlKeyValue*   _keyvals;
+} TomlTable;
 
 typedef struct {
     TomlTable*      _table;
@@ -146,6 +150,17 @@ TomlValue *toml_table_get_by_string(TOML_CONST TomlTable *self, TOML_CONST TomlS
 void toml_table_set(TomlTable *self, TOML_CONST char *key, TomlValue *value);
 void toml_table_setn(TomlTable *self, TOML_CONST char *key, size_t key_len, TomlValue *value);
 TomlValue* toml_table_get(TOML_CONST TomlTable *self, TOML_CONST char *key);
+TomlTable* toml_table_get_as_table(TOML_CONST TomlTable *self, TOML_CONST char *key);
+TomlArray* toml_table_get_as_array(TOML_CONST TomlTable *self, TOML_CONST char *key);
+TomlString* toml_table_get_as_string(TOML_CONST TomlTable *self, TOML_CONST char *key);
+#if defined(_MSC_VER)
+long long toml_table_get_as_integer(TOML_CONST TomlTable *self, TOML_CONST char *key);
+#else
+long toml_table_get_as_integer(TOML_CONST TomlTable *self, TOML_CONST char *key);
+#endif
+double toml_table_get_as_float(TOML_CONST TomlTable *self, TOML_CONST char *key);
+const struct tm* toml_table_get_as_datetime(TOML_CONST TomlTable *self, TOML_CONST char *key);
+int toml_table_get_as_boolean(TOML_CONST TomlTable *self, TOML_CONST char *key);
 TomlValue* toml_table_getn(TOML_CONST TomlTable *self, TOML_CONST char *key, size_t key_len);
 
 TomlTableIter toml_table_iter_new(TomlTable *table);

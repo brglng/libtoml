@@ -10,12 +10,6 @@
 #include <pthread.h>
 #include "toml.h"
 
-struct _TomlTable {
-    TomlKeyValue*   keyvals;
-    size_t          len;
-    size_t          capacity;
-};
-
 static pthread_key_t g_err_key;
 static pthread_once_t g_err_once;
 
@@ -376,6 +370,73 @@ TomlValue *toml_table_getn(TOML_CONST TomlTable *self, TOML_CONST char *key, siz
 TomlValue *toml_table_get(TOML_CONST TomlTable *self, TOML_CONST char *key)
 {
     return toml_table_getn(self, key, strlen(key));
+}
+
+TomlTable* toml_table_get_as_table(TOML_CONST TomlTable *self, TOML_CONST char *key)
+{
+    TomlValue *v = toml_table_get(self, key);
+    if (v == NULL)
+        return NULL;
+    assert(v->type == TOML_TABLE);
+    return v->value.table;
+}
+
+TomlArray* toml_table_get_as_array(TOML_CONST TomlTable *self, TOML_CONST char *key)
+{
+    TomlValue *v = toml_table_get(self, key);
+    if (v == NULL)
+        return NULL;
+    assert(v->type == TOML_ARRAY);
+    return v->value.array;
+}
+
+TomlString* toml_table_get_as_string(TOML_CONST TomlTable *self, TOML_CONST char *key)
+{
+    TomlValue *v = toml_table_get(self, key);
+    if (v == NULL)
+        return NULL;
+    assert(v->type == TOML_STRING);
+    return v->value.string;
+}
+
+#if defined(_MSC_VER)
+long long toml_table_get_as_integer(TOML_CONST TomlTable *self, TOML_CONST char *key)
+#else
+long toml_table_get_as_integer(TOML_CONST TomlTable *self, TOML_CONST char *key)
+#endif
+{
+    TomlValue *v = toml_table_get(self, key);
+    if (v == NULL)
+        return NULL;
+    assert(v->type == TOML_INTEGER);
+    return v->value.integer;
+}
+
+double toml_table_get_as_float(TOML_CONST TomlTable *self, TOML_CONST char *key)
+{
+    TomlValue *v = toml_table_get(self, key);
+    if (v == NULL)
+        return NULL;
+    assert(v->type == TOML_FLOAT);
+    return v->value.float_;
+}
+
+const struct tm* toml_table_get_as_datetime(TOML_CONST TomlTable *self, TOML_CONST char *key)
+{
+    TomlValue *v = toml_table_get(self, key);
+    if (v == NULL)
+        return NULL;
+    assert(v->type == TOML_DATETIME);
+    return &v->value.datetime;
+}
+
+int toml_table_get_as_boolean(TOML_CONST TomlTable *self, TOML_CONST char *key)
+{
+    TomlValue *v = toml_table_get(self, key);
+    if (v == NULL)
+        return NULL;
+    assert(v->type == TOML_BOOLEAN);
+    return v->value.boolean;
 }
 
 void toml_table_setn(TomlTable *self, TOML_CONST char *key, size_t key_len, TomlValue *value)

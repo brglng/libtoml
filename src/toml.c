@@ -375,8 +375,7 @@ TomlValue *toml_table_get(TOML_CONST TomlTable *self, TOML_CONST char *key)
 TomlTable* toml_table_get_as_table(TOML_CONST TomlTable *self, TOML_CONST char *key)
 {
     TomlValue *v = toml_table_get(self, key);
-    if (v == NULL)
-        return NULL;
+    assert(v != NULL);
     assert(v->type == TOML_TABLE);
     return v->value.table;
 }
@@ -384,8 +383,7 @@ TomlTable* toml_table_get_as_table(TOML_CONST TomlTable *self, TOML_CONST char *
 TomlArray* toml_table_get_as_array(TOML_CONST TomlTable *self, TOML_CONST char *key)
 {
     TomlValue *v = toml_table_get(self, key);
-    if (v == NULL)
-        return NULL;
+    assert(v != NULL);
     assert(v->type == TOML_ARRAY);
     return v->value.array;
 }
@@ -393,8 +391,7 @@ TomlArray* toml_table_get_as_array(TOML_CONST TomlTable *self, TOML_CONST char *
 TomlString* toml_table_get_as_string(TOML_CONST TomlTable *self, TOML_CONST char *key)
 {
     TomlValue *v = toml_table_get(self, key);
-    if (v == NULL)
-        return NULL;
+    assert(v != NULL);
     assert(v->type == TOML_STRING);
     return v->value.string;
 }
@@ -406,8 +403,7 @@ long toml_table_get_as_integer(TOML_CONST TomlTable *self, TOML_CONST char *key)
 #endif
 {
     TomlValue *v = toml_table_get(self, key);
-    if (v == NULL)
-        return NULL;
+    assert(v != NULL);
     assert(v->type == TOML_INTEGER);
     return v->value.integer;
 }
@@ -415,8 +411,7 @@ long toml_table_get_as_integer(TOML_CONST TomlTable *self, TOML_CONST char *key)
 double toml_table_get_as_float(TOML_CONST TomlTable *self, TOML_CONST char *key)
 {
     TomlValue *v = toml_table_get(self, key);
-    if (v == NULL)
-        return NULL;
+    assert(v != NULL);
     assert(v->type == TOML_FLOAT);
     return v->value.float_;
 }
@@ -424,8 +419,7 @@ double toml_table_get_as_float(TOML_CONST TomlTable *self, TOML_CONST char *key)
 const struct tm* toml_table_get_as_datetime(TOML_CONST TomlTable *self, TOML_CONST char *key)
 {
     TomlValue *v = toml_table_get(self, key);
-    if (v == NULL)
-        return NULL;
+    assert(v != NULL);
     assert(v->type == TOML_DATETIME);
     return &v->value.datetime;
 }
@@ -433,8 +427,7 @@ const struct tm* toml_table_get_as_datetime(TOML_CONST TomlTable *self, TOML_CON
 int toml_table_get_as_boolean(TOML_CONST TomlTable *self, TOML_CONST char *key)
 {
     TomlValue *v = toml_table_get(self, key);
-    if (v == NULL)
-        return NULL;
+    assert(v != NULL);
     assert(v->type == TOML_BOOLEAN);
     return v->value.boolean;
 }

@@ -50,6 +50,7 @@ include(GNUInstallDirs)
 include(tomlTargetProperties)
 
 add_library(${PROJECT_NAME} src/toml.c)
+add_library(toml::toml ALIAS toml)
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -58,7 +59,6 @@ target_include_directories(${PROJECT_NAME}
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
   )
 target_link_libraries(${PROJECT_NAME} pthread)
-add_library(toml::toml ALIAS toml)
 
 export(TARGETS toml NAMESPACE toml FILE tomlTargets.cmake)
 
@@ -71,9 +71,7 @@ install(
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
 
-if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  install(DIRECTORY include DESTINATION .)
-endif()
+install(DIRECTORY include DESTINATION .)
 
 if(BUILD_TESTING)
   add_subdirectory(tests)

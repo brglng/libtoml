@@ -81,34 +81,33 @@ endif()
 
 export(PACKAGE toml)
 
-if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  # Install README and CHANGELOG
-  install(
-    FILES README.md CHANGELOG.md
-    DESTINATION ${CMAKE_INSTALL_DOCDIR}
-    )
-  
-  install(EXPORT tomlTargets
-    FILE tomlTargets.cmake
-    NAMESPACE toml::
+install(
+  FILES README.md CHANGELOG.md
+  DESTINATION ${CMAKE_INSTALL_DOCDIR}
+  )
+
+install(EXPORT tomlTargets
+  FILE tomlTargets.cmake
+  NAMESPACE toml::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+  )
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  tomlConfigVersion.cmake
+  VERSION ${PACKAGE_VERSION}
+  COMPATIBILITY SameMajorVersion
+  )
+
+configure_file(cmake/tomlConfig.cmake.in tomlConfig.cmake @ONLY)
+install(
+  FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/tomlConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/tomlConfigVersion.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
+  )
   
-  include(CMakePackageConfigHelpers)
-  write_basic_package_version_file(
-    tomlConfigVersion.cmake
-    VERSION ${PACKAGE_VERSION}
-    COMPATIBILITY SameMajorVersion
-    )
-  
-  configure_file(cmake/tomlConfig.cmake.in tomlConfig.cmake @ONLY)
-  install(
-    FILES
-      "${CMAKE_CURRENT_BINARY_DIR}/tomlConfig.cmake"
-      "${CMAKE_CURRENT_BINARY_DIR}/tomlConfigVersion.cmake"
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
-  
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   set(CPACK_PACKAGE_NAME "toml")
   set(CPACK_GENERATOR "TXZ")
   set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})

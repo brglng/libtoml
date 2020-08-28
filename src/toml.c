@@ -303,9 +303,9 @@ int toml_string_equals(TOML_CONST TomlString *self, TOML_CONST TomlString *other
 TomlTable *toml_table_new(void)
 {
     TomlTable *self = TOML_NEW(TomlTable);
-    self->keyvals = NULL;
+    self->_capacity = 0;
+    self->_keyvals = NULL;
     self->len = 0;
-    self->capacity = 0;
     return self;
 }
 
@@ -313,21 +313,21 @@ void toml_table_free(TomlTable *self)
 {
     if (self != NULL) {
         for (size_t i = 0; i < self->len; i++) {
-            toml_string_free(self->keyvals[i].key);
-            toml_value_free(self->keyvals[i].value);
+            toml_string_free(self->_keyvals[i].key);
+            toml_value_free(self->_keyvals[i].value);
         }
-        free(self->keyvals);
+        free(self->_keyvals);
         free(self);
     }
 }
 
 void toml_table_expand_if_necessary(TomlTable *self)
 {
-    if (self->len + 1 > self->capacity) {
-        size_t new_capacity = self->capacity > 0 ? self->capacity * 2 : 8;
-        void *p = toml_realloc(self->keyvals, sizeof(TomlKeyValue) * new_capacity);
-        self->keyvals = p;
-        self->capacity = new_capacity;
+    if (self->len + 1 > self->_capacity) {
+        size_t new_capacity = self->_capacity > 0 ? self->_capacity * 2 : 8;
+        void *p = toml_realloc(self->_keyvals, sizeof(TomlKeyValue) * new_capacity);
+        self->_keyvals = p;
+        self->_capacity = new_capacity;
     }
 }
 
@@ -335,15 +335,15 @@ void toml_table_set_by_string(TomlTable *self, TomlString *key, TomlValue *value
 {
     TomlValue **slot = NULL;
     for (size_t i = 0; i < self->len; i++) {
-        if (toml_string_equals(self->keyvals[i].key, key)) {
-            slot = &self->keyvals[i].value;
+        if (toml_string_equals(self->_keyvals[i].key, key)) {
+            slot = &self->_keyvals[i].value;
         }
     }
 
     if (slot == NULL) {
         toml_table_expand_if_necessary(self);
-        self->keyvals[self->len].key = key;
-        self->keyvals[self->len].value = value;
+        self->_keyvals[self->len].key = key;
+        self->_keyvals[self->len].value = value;
         self->len++;
     } else {
         *slot = value;
@@ -354,8 +354,8 @@ TomlValue *toml_table_get_by_string(TOML_CONST TomlTable *self, TOML_CONST TomlS
 {
     TomlValue *value = NULL;
     for (size_t i = 0; i < self->len; i++) {
-        if (toml_string_equals(self->keyvals[i].key, key)) {
-            value = self->keyvals[i].value;
+        if (toml_string_equals(self->_keyvals[i].key, key)) {
+            value = self->_keyvals[i].value;
         }
     }
     return value;
@@ -452,7 +452,7 @@ void toml_table_set(TomlTable *self, TOML_CONST char *key, TomlValue *value)
 
 TomlTableIter toml_table_iter_new(TomlTable *table)
 {
-    TomlTableIter self = { table, table->keyvals };
+    TomlTableIter self = { table, table->_keyvals };
     return self;
 }
 
@@ -468,11 +468,11 @@ int toml_table_iter_has_next(TomlTableIter *self)
 
 void toml_table_iter_next(TomlTableIter *self)
 {
-    if (self->_keyval < self->_table->keyvals + self->_table->len) {
+    if (self->_keyval < self->_table->_keyvals + self->_table->len) {
         self->_keyval++;
     }
 
-    if (self->_keyval >= self->_table->keyvals + self->_table->len) {
+    if (self->_keyval >= self->_table->_keyvals + self->_table->len) {
         self->_keyval = NULL;
     }
 }
@@ -612,11 +612,20 @@ void toml_value_free(TomlValue *self)
 {
     if (self != NULL) {
         switch (self->type) {
-            case TOML_STRING:   toml_string_free(self->value.string);   break;
-            case TOML_TABLE:    toml_table_free(self->value.table);     break;
-            case TOML_ARRAY:    toml_array_free(self->value.array);     break;
-            case TOML_DATETIME: free(self->value.datetime);             break;
-            default:                                                    break;
+            case TOML_STRING:
+                toml_string_free(self->value.string);
+                break;
+            case TOML_TABLE:
+                toml_table_free(self->value.table);
+                break;
+            case TOML_ARRAY:
+                toml_array_free(self->value.array);
+                break;
+            case TOML_DATETIME:
+                memset(&self->value.datetime, 0, sizeof(struct tm));
+                break;
+            default:
+                break;
         }
         free(self);
     }

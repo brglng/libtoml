@@ -83,14 +83,12 @@ endif()
 
 export(PACKAGE toml)
 
-if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  install(DIRECTORY include DESTINATION .)
+install(DIRECTORY include DESTINATION .)
 
-  install(
-    FILES README.md CHANGELOG.md LICENSE
-    DESTINATION ${CMAKE_INSTALL_DOCDIR}
-    )
-endif()
+install(
+  FILES README.md CHANGELOG.md LICENSE
+  DESTINATION ${CMAKE_INSTALL_DOCDIR}
+  )
 
 install(EXPORT tomlTargets
   FILE tomlTargets.cmake

@@ -132,20 +132,14 @@ static void toml_err_free(void *_err)
     }
 }
 
-static void toml_err_init(void)
+static void toml_init_err_key(void)
 {
     pthread_key_create(&g_err_key, &toml_err_free);
-    TomlErr *err = TOML_NEW(TomlErr);
-    assert(err != NULL);
-    err->code = TOML_OK;
-    err->message = NULL;
-    err->_is_literal = TOML_FALSE;
-    pthread_setspecific(g_err_key, err);
 }
 
 static inline TomlErr *toml_err_mut(void)
 {
-    pthread_once(&g_err_once, &toml_err_init);
+    pthread_once(&g_err_once, &toml_init_err_key);
     return pthread_getspecific(g_err_key);
 }
 
@@ -167,6 +161,13 @@ static inline void toml_set_err(int code, TOML_CONST char *format, ...)
 {
     TomlErr *err = toml_err_mut();
     assert(err == NULL);
+
+    err = TOML_NEW(TomlErr);
+    err->code = TOML_OK;
+    err->message = NULL;
+    err->_is_literal = TOML_FALSE;
+    pthread_setspecific(g_err_key, err);
+
     va_list args;
     va_start(args, format);
     err->code = code;

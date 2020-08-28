@@ -59,6 +59,13 @@ target_include_directories(${PROJECT_NAME}
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
   )
 target_link_libraries(${PROJECT_NAME} pthread)
+target_compile_features(${PROJECT_NAME} PRIVATE ${wav_compile_features})
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${wav_compile_definitions})
+target_compile_options(${PROJECT_NAME} PRIVATE
+  ${wav_c_flags}
+  $<$<CONFIG:RELEASE>:${wav_compile_options_release}>
+  $<$<CONFIG:RELWITHDEBINFO>:${wav_compile_options_release}>
+  )
 
 export(TARGETS toml NAMESPACE toml FILE tomlTargets.cmake)
 

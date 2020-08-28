@@ -24,6 +24,7 @@ elseif(${CMAKE_C_COMPILER_ID} MATCHES "^(GNU|.*Clang)$")
                -Wshadow
                -Wuninitialized
                -Wwrite-strings
+               -Wno-format-truncation
                -Werror=discarded-qualifiers
                -Werror=ignored-qualifiers
                -Werror=implicit

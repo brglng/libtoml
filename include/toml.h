@@ -37,19 +37,19 @@ extern "C" {
 #define TOML_FALSE  0
 #define TOML_TRUE   1
 
-enum {
+typedef enum {
     TOML_OK,
     TOML_ERR,
     TOML_ERR_OS,
     TOML_ERR_NOMEM,
     TOML_ERR_SYNTAX,
     TOML_ERR_UNICODE
-};
+} TomlErrCode;
 
 typedef struct {
-    int     code;
-    char*   message;
-    int     _is_literal;
+    TomlErrCode     code;
+    char*           message;
+    int             _is_literal;
 } TomlErr;
 
 typedef struct {
@@ -147,8 +147,8 @@ TOML_CONST TomlErr* toml_err(void);
 void toml_err_clear(void);
 
 TomlString* toml_string_new(void);
-TomlString* toml_string_new_from_str(TOML_CONST char *str);
-TomlString* toml_string_new_from_nstr(TOML_CONST char *str, size_t len);
+TomlString* toml_string_from_str(TOML_CONST char *str);
+TomlString* toml_string_from_nstr(TOML_CONST char *str, size_t len);
 void toml_string_append_char(TomlString *self, char ch);
 void toml_string_append_str(TomlString *self, TOML_CONST char *str);
 void toml_string_append_nstr(TomlString *self, TOML_CONST char *str, size_t len);
@@ -188,8 +188,6 @@ void toml_array_append(TomlArray *self, TomlValue *value);
 
 TomlValue* toml_value_new(TomlType type);
 TomlValue* toml_value_new_string(TomlType type);
-TomlValue* toml_value_new_from_str(TOML_CONST char *str);
-TomlValue* toml_value_new_from_nstr(TOML_CONST char *str, size_t len);
 TomlValue* toml_value_new_table(void);
 TomlValue* toml_value_new_array(void);
 #if defined(_MSC_VER)
@@ -200,6 +198,8 @@ TomlValue *toml_value_new_integer(long integer);
 TomlValue* toml_value_new_float(double flt);
 TomlValue* toml_value_new_datetime(void);
 TomlValue* toml_value_new_boolean(int boolean);
+TomlValue* toml_value_from_str(TOML_CONST char *str);
+TomlValue* toml_value_from_nstr(TOML_CONST char *str, size_t len);
 void toml_value_free(TomlValue *self);
 
 TomlTable* toml_load_str(TOML_CONST char *str);

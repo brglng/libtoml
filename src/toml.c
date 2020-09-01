@@ -139,7 +139,7 @@ void toml_err_clear(void)
     }
 }
 
-static TOML_INLINE void toml_err_set(int code, TOML_CONST char *format, ...)
+static TOML_INLINE void toml_err_set(TomlErrCode code, TOML_CONST char *format, ...)
 {
     assert(g_err.code == TOML_OK);
     va_list args;
@@ -150,7 +150,7 @@ static TOML_INLINE void toml_err_set(int code, TOML_CONST char *format, ...)
     va_end(args);
 }
 
-static TOML_INLINE void toml_err_set_literal(int code, TOML_CONST char *message)
+static TOML_INLINE void toml_err_set_literal(TomlErrCode code, TOML_CONST char *message)
 {
     assert(g_err.code == TOML_OK);
     g_err.code = code;
@@ -188,14 +188,14 @@ TomlString *toml_string_new(void)
     return self;
 }
 
-TomlString *toml_string_new_from_str(TOML_CONST char *str)
+TomlString *toml_string_from_str(TOML_CONST char *str)
 {
     TomlString *self = toml_string_new();
     toml_string_append_str(self, str);
     return self;
 }
 
-TomlString *toml_string_new_from_nstr(TOML_CONST char *str, size_t len)
+TomlString *toml_string_from_nstr(TOML_CONST char *str, size_t len)
 {
     TomlString *self = toml_string_new();
     toml_string_append_nstr(self, str, len);
@@ -246,7 +246,7 @@ void toml_string_free(TomlString *self)
 
 TomlString *toml_string_clone(TOML_CONST TomlString *self)
 {
-    return toml_string_new_from_nstr(self->str, self->len);
+    return toml_string_from_nstr(self->str, self->len);
 }
 
 int toml_string_equals(TOML_CONST TomlString *self, TOML_CONST TomlString *other)
@@ -406,7 +406,7 @@ int toml_table_get_as_boolean(TOML_CONST TomlTable *self, TOML_CONST char *key)
 
 void toml_table_setn(TomlTable *self, TOML_CONST char *key, size_t key_len, TomlValue *value)
 {
-    TomlString *str = toml_string_new_from_nstr(key, key_len);
+    TomlString *str = toml_string_from_nstr(key, key_len);
     toml_table_set_by_string(self, str, value);
 }
 
@@ -508,18 +508,18 @@ TomlValue *toml_value_new(TomlType type)
     return self;
 }
 
-TomlValue *toml_value_new_from_str(TOML_CONST char *str)
+TomlValue *toml_value_from_str(TOML_CONST char *str)
 {
     TomlValue *self = TOML_NEW(TomlValue);
-    self->value.string = toml_string_new_from_str(str);
+    self->value.string = toml_string_from_str(str);
     self->type = TOML_STRING;
     return self;
 }
 
-TomlValue *toml_value_new_from_nstr(TOML_CONST char *str, size_t len)
+TomlValue *toml_value_from_nstr(TOML_CONST char *str, size_t len)
 {
     TomlValue *self = TOML_NEW(TomlValue);
-    self->value.string = toml_string_new_from_nstr(str, len);
+    self->value.string = toml_string_from_nstr(str, len);
     self->type = TOML_STRING;
     return self;
 }
@@ -660,7 +660,7 @@ TomlString* toml_parse_bare_key(TomlParser *self)
         toml_move_next(self);
     }
 
-    return toml_string_new_from_nstr(str, len);
+    return toml_string_from_nstr(str, len);
 }
 
 char toml_hex_char_to_int(char ch)
@@ -1182,7 +1182,7 @@ TomlValue* toml_parse_value(TomlParser *self)
     return value;
 }
 
-int toml_parse_key_value(TomlParser *self, TomlTable *table)
+TomlErrCode toml_parse_key_value(TomlParser *self, TomlTable *table)
 {
     TomlString *key = NULL;
     TomlValue *value = NULL;
@@ -1294,7 +1294,7 @@ int toml_parse_key_value(TomlParser *self, TomlTable *table)
         }
     }
 
-    return 0;
+    return TOML_OK;
 }
 
 TomlValue* toml_parse_array(TomlParser *self)
@@ -1553,12 +1553,12 @@ end:
     return real_table;
 }
 
-int toml_parse_table(TomlParser *self, TomlTable *table)
+TomlErrCode toml_parse_table(TomlParser *self, TomlTable *table)
 {
     TomlArray *key_path = NULL;
     int is_array = TOML_FALSE;
     TomlTable *real_table = table;
-    int rc = 0;
+    TomlErrCode rc = 0;
 
     key_path = toml_array_new();
 

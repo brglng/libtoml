@@ -10,7 +10,7 @@
 #include <pthread.h>
 #include "toml.h"
 
-static TOML_THREAD_LOCAL TomlErr g_err = {TOML_OK, "", TOML_TRUE};
+static TOML_THREAD_LOCAL TomlErr g_err = {TOML_OK, (char*)"", TOML_TRUE};
 
 static void* toml_default_aligned_alloc(void *context, size_t alignment, size_t size)
 {

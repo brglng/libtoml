@@ -1736,7 +1736,7 @@ TomlTable* toml_load_file_filename(FILE *file, TOML_CONST char *filename)
 
         count = fread(str->str, 1, bytes_to_read, file);
         if (ferror(file)) {
-            toml_err_set(TOML_ERR_OS, "Error when reading %s [OS error %d: %s]", filename, errno, strerror(errno));
+            toml_err_set(TOML_ERR_OS, "Error when reading %s [errno %d: %s]", filename, errno, strerror(errno));
             goto error;
         }
 
@@ -1774,7 +1774,7 @@ TomlTable* toml_load_filename(TOML_CONST char *filename)
 
     f = fopen(filename, "r");
     if (f == NULL) {
-        toml_err_set(TOML_ERR_OS, "Cannot open file: %s [OS error %d: %s]", filename, errno, strerror(errno));
+        toml_err_set(TOML_ERR_OS, "Cannot open file: %s [errno %d: %s]", filename, errno, strerror(errno));
         goto error;
     }
 

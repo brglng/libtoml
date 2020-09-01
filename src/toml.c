@@ -139,7 +139,7 @@ void toml_err_clear(void)
     }
 }
 
-static TOML_INLINE void toml_err_set(TomlErrCode code, TOML_CONST char *format, ...)
+TOML_INLINE void toml_err_set(TomlErrCode code, TOML_CONST char *format, ...)
 {
     assert(g_err.code == TOML_OK);
     va_list args;
@@ -150,7 +150,7 @@ static TOML_INLINE void toml_err_set(TomlErrCode code, TOML_CONST char *format, 
     va_end(args);
 }
 
-static TOML_INLINE void toml_err_set_literal(TomlErrCode code, TOML_CONST char *message)
+TOML_INLINE void toml_err_set_literal(TomlErrCode code, TOML_CONST char *message)
 {
     assert(g_err.code == TOML_OK);
     g_err.code = code;
@@ -158,7 +158,7 @@ static TOML_INLINE void toml_err_set_literal(TomlErrCode code, TOML_CONST char *
     g_err._is_literal = TOML_TRUE;
 }
 
-static TOML_INLINE size_t toml_roundup_pow_of_two_size_t(size_t x)
+TOML_INLINE size_t toml_roundup_pow_of_two_size_t(size_t x)
 {
     size_t v = x;
     v--;
@@ -202,7 +202,7 @@ TomlString *toml_string_from_nstr(TOML_CONST char *str, size_t len)
     return self;
 }
 
-static TOML_INLINE void toml_string_expand_if_necessary(TomlString *self, size_t len_to_add)
+TOML_INLINE void toml_string_expand_if_necessary(TomlString *self, size_t len_to_add)
 {
     if (self->len + len_to_add + 1 > self->_capacity) {
         size_t new_capacity = toml_roundup_pow_of_two_size_t(self->len + len_to_add + 1);

@@ -44,7 +44,7 @@ if (table != NULL) {
      * If error occurred, toml_clear_err() must be called before the next call
      * which can produce an error, or there can be an assertion failure.
      */
-    toml_clear_err();
+    toml_err_clear();
 }
 ```
 

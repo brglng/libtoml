@@ -88,12 +88,11 @@ int test_run(const char *filename)
 cleanup:
     toml_table_free(table);
 
-    const TomlErr *err = toml_err();
-    if (err) {
-        fprintf(stderr, "%s\n", err->message);
-        rc = err->code;
+    if (toml_err()->code != TOML_OK) {
+        fprintf(stderr, "%s\n", toml_err()->message);
+        rc = toml_err()->code;
     }
-    toml_clear_err();
+    toml_err_clear();
     return rc;
 }
 

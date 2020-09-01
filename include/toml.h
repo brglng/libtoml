@@ -14,14 +14,28 @@ extern "C" {
 #include <stdlib.h>
 #include <time.h>
 
-#define TOML_FALSE  0
-#define TOML_TRUE   1
+#if defined(__cplusplus) && __cplusplus >= 201103L
+#define TOML_THREAD_LOCAL thread_local
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#define TOML_THREAD_LOCAL _Thread_local
+#elif defined(_MSC_VER)
+#define TOML_THREAD_LOCAL __declspec(thread)
+#else
+#define TOML_THREAD_LOCAL __thread
+#endif
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1800
+#define TOML_INLINE static inline
 #define TOML_CONST const
+#define TOML_RESTRICT restrict
 #else
+#define TOML_INLINE static __inline
 #define TOML_CONST
+#define TOML_RESTRICT __restrict
 #endif
+
+#define TOML_FALSE  0
+#define TOML_TRUE   1
 
 enum {
     TOML_OK,
@@ -130,7 +144,7 @@ int toml_vasprintf(char **str, TOML_CONST char *format, va_list args);
 int toml_asprintf(char **str, TOML_CONST char *format, ...);
 
 TOML_CONST TomlErr* toml_err(void);
-void toml_clear_err(void);
+void toml_err_clear(void);
 
 TomlString* toml_string_new(void);
 TomlString* toml_string_new_from_str(TOML_CONST char *str);

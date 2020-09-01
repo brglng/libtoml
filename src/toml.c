@@ -10,8 +10,7 @@
 #include <pthread.h>
 #include "toml.h"
 
-static pthread_key_t g_err_key;
-static pthread_once_t g_err_once;
+static TOML_THREAD_LOCAL TomlErr g_err = {TOML_OK, "", TOML_TRUE};
 
 static void* toml_default_aligned_alloc(void *context, size_t alignment, size_t size)
 {
@@ -69,7 +68,9 @@ void* toml_realloc(void *p, size_t size)
 
 void toml_free(void *p)
 {
-    g_alloc_funcs->free(g_alloc_context, p);
+    if (p != NULL) {
+        g_alloc_funcs->free(g_alloc_context, p);
+    }
 }
 
 char* toml_strdup(TOML_CONST char *str)
@@ -121,71 +122,43 @@ int toml_asprintf(char **str, TOML_CONST char *format, ...)
     return size;
 }
 
-static void toml_err_free(void *_err)
+TOML_CONST TomlErr* toml_err(void)
 {
-    TomlErr *err = _err;
-    if (err) {
-        if (!err->_is_literal) {
-            free(err->message);
+    return &g_err;
+}
+
+void toml_err_clear(void)
+{
+    if (g_err.code != TOML_OK) {
+        if (!g_err._is_literal) {
+            toml_free(g_err.message);
         }
-        free(err);
+        g_err.code = TOML_OK;
+        g_err.message = "";
+        g_err._is_literal = TOML_TRUE;
     }
 }
 
-static void toml_init_err_key(void)
+static TOML_INLINE void toml_err_set(int code, TOML_CONST char *format, ...)
 {
-    pthread_key_create(&g_err_key, &toml_err_free);
-}
-
-static inline TomlErr *toml_err_mut(void)
-{
-    pthread_once(&g_err_once, &toml_init_err_key);
-    return pthread_getspecific(g_err_key);
-}
-
-TOML_CONST TomlErr *toml_err(void)
-{
-    return toml_err_mut();
-}
-
-void toml_clear_err(void)
-{
-    TomlErr *err = toml_err_mut();
-    if (err != NULL) {
-        toml_err_free(err);
-        pthread_setspecific(g_err_key, NULL);
-    }
-}
-
-static inline void toml_set_err(int code, TOML_CONST char *format, ...)
-{
-    TomlErr *err = toml_err_mut();
-    assert(err == NULL);
-
-    err = TOML_NEW(TomlErr);
-    err->code = TOML_OK;
-    err->message = NULL;
-    err->_is_literal = TOML_FALSE;
-    pthread_setspecific(g_err_key, err);
-
+    assert(g_err.code == TOML_OK);
     va_list args;
     va_start(args, format);
-    err->code = code;
-    toml_vasprintf(&err->message, format, args);
-    err->_is_literal = TOML_FALSE;
+    g_err.code = code;
+    toml_vasprintf(&g_err.message, format, args);
+    g_err._is_literal = TOML_FALSE;
     va_end(args);
 }
 
-static inline void toml_set_err_literal(int code, TOML_CONST char *message)
+static TOML_INLINE void toml_err_set_literal(int code, TOML_CONST char *message)
 {
-    TomlErr *err = toml_err_mut();
-    assert(err == NULL);
-    err->code = code;
-    err->message = (char *)message;
-    err->_is_literal = TOML_TRUE;
+    assert(g_err.code == TOML_OK);
+    g_err.code = code;
+    g_err.message = (char *)message;
+    g_err._is_literal = TOML_TRUE;
 }
 
-static inline size_t toml_roundup_pow_of_two_size_t(size_t x)
+static TOML_INLINE size_t toml_roundup_pow_of_two_size_t(size_t x)
 {
     size_t v = x;
     v--;
@@ -229,7 +202,7 @@ TomlString *toml_string_new_from_nstr(TOML_CONST char *str, size_t len)
     return self;
 }
 
-static inline void toml_string_expand_if_necessary(TomlString *self, size_t len_to_add)
+static TOML_INLINE void toml_string_expand_if_necessary(TomlString *self, size_t len_to_add)
 {
     if (self->len + len_to_add + 1 > self->_capacity) {
         size_t new_capacity = toml_roundup_pow_of_two_size_t(self->len + len_to_add + 1);
@@ -242,11 +215,9 @@ static inline void toml_string_expand_if_necessary(TomlString *self, size_t len_
 void toml_string_append_char(TomlString *self, char ch)
 {
     toml_string_expand_if_necessary(self, 1);
-    if (!toml_err()) {
-        self->str[self->len] = ch;
-        self->str[self->len + 1] = 0;
-        self->len++;
-    }
+    self->str[self->len] = ch;
+    self->str[self->len + 1] = 0;
+    self->len++;
 }
 
 void toml_string_append_str(TomlString *self, TOML_CONST char *str)
@@ -710,7 +681,7 @@ int toml_encode_unicode_scalar(TomlString *result, TomlParser *parser, int n)
     unsigned int scalar = 0;
 
     if (parser->ptr + n > parser->end) {
-        toml_set_err(TOML_ERR_UNICODE, "%s:%d:%d: invalid unicode scalar",
+        toml_err_set(TOML_ERR_UNICODE, "%s:%d:%d: invalid unicode scalar",
                      parser->filename, parser->lineno, parser->colno);
         return TOML_ERR_UNICODE;
     }
@@ -721,7 +692,7 @@ int toml_encode_unicode_scalar(TomlString *result, TomlParser *parser, int n)
             scalar = scalar * 16 + (unsigned int)toml_hex_char_to_int(ch);
             toml_move_next(parser);
         } else {
-            toml_set_err(TOML_ERR_UNICODE, "%s:%d:%d: invalid unicode scalar",
+            toml_err_set(TOML_ERR_UNICODE, "%s:%d:%d: invalid unicode scalar",
                          parser->filename, parser->lineno, parser->colno);
             return TOML_ERR_UNICODE;
         }
@@ -729,7 +700,7 @@ int toml_encode_unicode_scalar(TomlString *result, TomlParser *parser, int n)
 
     if ((scalar >= 0xd800 && scalar <= 0xdfff) ||
         (scalar >= 0xfffe && scalar <= 0xffff)) {
-        toml_set_err(TOML_ERR_UNICODE, "%s:%d:%d: invalid unicode scalar",
+        toml_err_set(TOML_ERR_UNICODE, "%s:%d:%d: invalid unicode scalar",
                      parser->filename, parser->lineno, parser->colno);
         return TOML_ERR_UNICODE;
     }
@@ -779,7 +750,7 @@ int toml_encode_unicode_scalar(TomlString *result, TomlParser *parser, int n)
         return 0;
     }
 
-    toml_set_err(TOML_ERR_UNICODE, "%s:%d:%d: invalid unicode scalar",
+    toml_err_set(TOML_ERR_UNICODE, "%s:%d:%d: invalid unicode scalar",
                  parser->filename, parser->lineno, parser->colno);
 
     return TOML_ERR_UNICODE;
@@ -834,7 +805,7 @@ TomlString* toml_parse_basic_string(TomlParser *self)
                     return NULL;
                 }
             } else {
-                toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: invalid escape charactor");
+                toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: invalid escape charactor");
                 toml_string_free(result);
             }
         } else {
@@ -844,7 +815,7 @@ TomlString* toml_parse_basic_string(TomlParser *self)
     }
 
     if (self->ptr >= self->end || *self->ptr != '\"' || *self->ptr == '\n') {
-        toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated basic string",
+        toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated basic string",
                      self->filename, self->lineno, self->colno);
         toml_string_free(result);
     }
@@ -864,7 +835,7 @@ TomlString* toml_parse_literal_string(TomlParser *self)
     }
 
     if (self->ptr >= self->end || *self->ptr != '\'' || *self->ptr == '\n') {
-        toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated literal string",
+        toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated literal string",
                      self->filename, self->lineno, self->colno);
         toml_string_free(result);
         return NULL;
@@ -964,7 +935,7 @@ TomlValue* toml_parse_multi_line_basic_string(TomlParser *self)
                     toml_move_next(self);
                 } while (self->ptr + 3 <= self->end && isspace(*self->ptr));
             } else {
-                toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: invalid escape charactor",
+                toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: invalid escape charactor",
                              self->filename, self->lineno, self->colno);
                 toml_string_free(result);
                 return NULL;
@@ -976,7 +947,7 @@ TomlValue* toml_parse_multi_line_basic_string(TomlParser *self)
     }
 
     if (self->ptr + 3 > self->end || strncmp(self->ptr, "\"\"\"", 3) != 0) {
-        toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated multi-line basic string",
+        toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated multi-line basic string",
                      self->filename, self->lineno, self->colno);
         toml_string_free(result);
         return NULL;
@@ -1006,7 +977,7 @@ TomlValue* toml_parse_multi_line_literal_string(TomlParser *self)
     }
 
     if (self->ptr + 3 > self->end || strncmp(self->ptr, "\'\'\'", 3) != 0) {
-        toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated multi-line literal string",
+        toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated multi-line literal string",
                      self->filename, self->lineno, self->colno);
         toml_string_free(result);
         return NULL;
@@ -1091,21 +1062,21 @@ TomlValue* toml_parse_int_or_float_or_time(TomlParser *self)
                 type = 'f';
                 toml_string_append_char(str, *self->ptr);
             } else {
-                toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: invalid float",
+                toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: invalid float",
                              self->filename, self->lineno, self->colno);
                 toml_string_free(str);
                 return NULL;
             }
         } else if (*self->ptr == '_') {
             if (type == 't') {
-                toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: invalid datetime",
+                toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: invalid datetime",
                              self->filename, self->lineno, self->colno);
                 toml_string_free(str);
                 return NULL;
             }
 
             if (!isalnum(last_char)) {
-                toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer or float",
+                toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer or float",
                              self->filename, self->lineno, self->colno);
                 toml_string_free(str);
                 return NULL;
@@ -1122,7 +1093,7 @@ TomlValue* toml_parse_int_or_float_or_time(TomlParser *self)
     }
 
     if (last_char == '_') {
-        toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer or float or datetime",
+        toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer or float or datetime",
                      self->filename, self->lineno, self->colno);
         toml_string_free(str);
         return NULL;
@@ -1132,7 +1103,7 @@ TomlValue* toml_parse_int_or_float_or_time(TomlParser *self)
         char *end = NULL;
         long long n = strtoll(str->str, &end, base);
         if (end < str->str + str->len) {
-            toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer",
+            toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: invalid integer",
                          self->filename, self->lineno, self->colno);
             toml_string_free(str);
             return NULL;
@@ -1142,7 +1113,7 @@ TomlValue* toml_parse_int_or_float_or_time(TomlParser *self)
         char *end = NULL;
         double n = strtod(str->str, &end);
         if (end < str->str + str->len) {
-            toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: invalid float");
+            toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: invalid float");
             goto cleanup;
         }
         result = toml_value_new_float(n);
@@ -1204,7 +1175,7 @@ TomlValue* toml_parse_value(TomlParser *self)
         toml_move_next(self);
         value = toml_parse_inline_table(self);
     } else {
-        toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
+        toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
                      self->filename, self->lineno, self->colno);
     }
 
@@ -1251,7 +1222,7 @@ int toml_parse_key_value(TomlParser *self, TomlTable *table)
             toml_move_next(self);
             continue;
         } else {
-            toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
+            toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
                          self->filename, self->lineno, self->colno);
             return TOML_ERR_SYNTAX;
         }
@@ -1263,12 +1234,12 @@ int toml_parse_key_value(TomlParser *self, TomlTable *table)
         }
 
         if (self->ptr == self->end) {
-            toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated key value pair");
+            toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated key value pair");
             return TOML_ERR_SYNTAX;
         }
 
         if (ch != '=') {
-            toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
+            toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
                          self->filename, self->lineno, self->colno);
             return TOML_ERR_SYNTAX;
         }
@@ -1282,7 +1253,7 @@ int toml_parse_key_value(TomlParser *self, TomlTable *table)
         }
 
         if (self->ptr == self->end) {
-            toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated key value pair");
+            toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated key value pair");
             return TOML_ERR_SYNTAX;
         }
 
@@ -1315,7 +1286,7 @@ int toml_parse_key_value(TomlParser *self, TomlTable *table)
         if (*self->ptr == '\n') {
             toml_move_next(self);
         } else {
-            toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: new line expected",
+            toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: new line expected",
                          self->filename, self->lineno, self->colno);
             toml_value_free(value);
             toml_string_free(key);
@@ -1423,7 +1394,7 @@ TomlValue* toml_parse_inline_table(TomlParser *self)
         } else if (ch == '}') {
             break;
         } else {
-            toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
+            toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
                          self->filename, self->lineno, self->colno);
             goto error;
         }
@@ -1435,12 +1406,12 @@ TomlValue* toml_parse_inline_table(TomlParser *self)
         }
 
         if (self->ptr == self->end) {
-            toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated key value pair");
+            toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated key value pair");
             goto error;
         }
 
         if (ch != '=') {
-            toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
+            toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
                          self->filename, self->lineno, self->colno);
             goto error;
         }
@@ -1454,7 +1425,7 @@ TomlValue* toml_parse_inline_table(TomlParser *self)
         }
 
         if (self->ptr == self->end) {
-            toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated key value pair");
+            toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unterminated key value pair");
             goto error;
         }
 
@@ -1535,7 +1506,7 @@ TomlTable* toml_walk_table_path(TomlParser *parser, TomlTable *table,
             }
         } else {
             if (t->type != TOML_ARRAY) {
-                toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: this key was not an array",
+                toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: this key was not an array",
                              parser->filename, parser->lineno, parser->colno);
                 goto error;
             }
@@ -1630,7 +1601,7 @@ int toml_parse_table(TomlParser *self, TomlTable *table)
                 if (key_part == NULL)
                     goto cleanup;
             } else {
-                toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
+                toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: unexpected token",
                              self->filename, self->lineno, self->colno);
             }
 
@@ -1651,7 +1622,7 @@ int toml_parse_table(TomlParser *self, TomlTable *table)
     }
 
     if (key_path->len == 0) {
-        toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: empty table name",
+        toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: empty table name",
                      self->filename, self->lineno, self->colno);
         goto cleanup;
     }
@@ -1662,7 +1633,7 @@ int toml_parse_table(TomlParser *self, TomlTable *table)
     }
 
     if (self->ptr < self->end && *self->ptr != '\n') {
-        toml_set_err(TOML_ERR_SYNTAX, "%s:%d:%d: new line expected",
+        toml_err_set(TOML_ERR_SYNTAX, "%s:%d:%d: new line expected",
                      self->filename, self->lineno, self->colno);
         goto cleanup;
     }
@@ -1765,7 +1736,7 @@ TomlTable* toml_load_file_filename(FILE *file, TOML_CONST char *filename)
 
         count = fread(str->str, 1, bytes_to_read, file);
         if (ferror(file)) {
-            toml_set_err(TOML_ERR_OS, "Error when reading %s [OS error %d: %s]", filename, errno, strerror(errno));
+            toml_err_set(TOML_ERR_OS, "Error when reading %s [OS error %d: %s]", filename, errno, strerror(errno));
             goto error;
         }
 
@@ -1803,7 +1774,7 @@ TomlTable* toml_load_filename(TOML_CONST char *filename)
 
     f = fopen(filename, "r");
     if (f == NULL) {
-        toml_set_err(TOML_ERR_OS, "Cannot open file: %s [OS error %d: %s]", filename, errno, strerror(errno));
+        toml_err_set(TOML_ERR_OS, "Cannot open file: %s [OS error %d: %s]", filename, errno, strerror(errno));
         goto error;
     }
 

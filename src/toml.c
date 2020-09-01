@@ -1774,7 +1774,7 @@ TomlTable* toml_load_filename(TOML_CONST char *filename)
 
     f = fopen(filename, "r");
     if (f == NULL) {
-        toml_err_set(TOML_ERR_OS, "Cannot open file: %s [errno %d: %s]", filename, errno, strerror(errno));
+        toml_err_set(TOML_ERR_OS, "Cannot open file %s [errno %d: %s]", filename, errno, strerror(errno));
         goto error;
     }
 

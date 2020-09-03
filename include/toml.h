@@ -167,7 +167,7 @@ TomlValue* toml_table_get(TOML_CONST TomlTable *self, TOML_CONST char *key);
 TomlTable* toml_table_get_as_table(TOML_CONST TomlTable *self, TOML_CONST char *key);
 TomlArray* toml_table_get_as_array(TOML_CONST TomlTable *self, TOML_CONST char *key);
 TomlString* toml_table_get_as_string(TOML_CONST TomlTable *self, TOML_CONST char *key);
-#if defined(_MSC_VER) || defined(_APPLE__)
+#if defined(_MSC_VER) || defined(__APPLE__)
 long long toml_table_get_as_integer(TOML_CONST TomlTable *self, TOML_CONST char *key);
 #else
 long toml_table_get_as_integer(TOML_CONST TomlTable *self, TOML_CONST char *key);

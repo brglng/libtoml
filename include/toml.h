@@ -95,7 +95,7 @@ struct _TomlValue {
         TomlTable*      table;
         TomlArray*      array;
         TomlString*     string;
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__APPLE__)
         long long       integer;
 #else
         long            integer;
@@ -190,7 +190,7 @@ TomlValue* toml_value_new(TomlType type);
 TomlValue* toml_value_new_string(TomlType type);
 TomlValue* toml_value_new_table(void);
 TomlValue* toml_value_new_array(void);
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__APPLE__)
 TomlValue *toml_value_new_integer(long long integer);
 #else
 TomlValue *toml_value_new_integer(long integer);

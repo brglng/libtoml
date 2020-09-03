@@ -368,7 +368,7 @@ TomlString* toml_table_get_as_string(TOML_CONST TomlTable *self, TOML_CONST char
     return v->value.string;
 }
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__APPLE__)
 long long toml_table_get_as_integer(TOML_CONST TomlTable *self, TOML_CONST char *key)
 #else
 long toml_table_get_as_integer(TOML_CONST TomlTable *self, TOML_CONST char *key)
@@ -540,7 +540,7 @@ TomlValue *toml_value_new_array(void)
     return self;
 }
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__APPLE__)
 TomlValue *toml_value_new_integer(long long integer)
 #else
 TomlValue *toml_value_new_integer(long integer)

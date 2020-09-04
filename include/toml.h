@@ -112,31 +112,16 @@ struct _TomlKeyValue {
 };
 
 typedef struct {
-    void*   (*aligned_alloc)(void *context, size_t alignment, size_t size);
+    void*   (*malloc)(void *context, size_t size);
     void*   (*realloc)(void *context, void *p, size_t size);
     void    (*free)(void *context, void *p);
 } TomlAllocFuncs;
 
 void toml_set_allocator(void *context, TOML_CONST TomlAllocFuncs *funcs);
 
-void* toml_aligned_alloc(size_t alignment, size_t size);
+void* toml_malloc(size_t size);
 void* toml_realloc(void *p, size_t size);
 void toml_free(void *p);
-
-#ifdef __cplusplus
-#define TOML_ALIGNOF(type) alignof(type)
-#else
-#if __STDC_VERSION__ >= 201112L
-#define TOML_ALIGNOF(type) _Alignof(type)
-#else
-#define TOML_ALIGNOF(type) offsetof(struct { char c; type d; }, d)
-#endif
-#endif
-
-#define _TOML_NEW0(_type) toml_aligned_alloc(TOML_ALIGNOF(_type), sizeof(_type))
-#define _TOML_NEW1(_type, _count) toml_aligned_alloc(TOML_ALIGNOF(_type), sizeof(_type) * (_count))
-#define _TOML_NEW(_type, _0, _macro_name, ...) _macro_name
-#define TOML_NEW(_type, ...) ((_type*)_TOML_NEW(_type, ##__VA_ARGS__, _TOML_NEW1, _TOML_NEW0)(_type, ##__VA_ARGS__))
 
 char* toml_strdup(TOML_CONST char *str);
 char* toml_strndup(TOML_CONST char *str, size_t n);

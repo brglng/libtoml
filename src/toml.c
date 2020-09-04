@@ -12,18 +12,11 @@
 
 static TOML_THREAD_LOCAL TomlErr g_err = {TOML_OK, (char*)"", TOML_TRUE};
 
-static void* toml_default_aligned_alloc(void *context, size_t alignment, size_t size)
+static void* toml_default_malloc(void *context, size_t size)
 {
     (void)context;
-    alignment = (alignment + sizeof(void*) - 1) & ~(sizeof(void*) - 1);
-#ifdef _WIN32
-    void *p = _aligned_malloc(size, alignment);
+    void *p = malloc(size);
     assert(p != NULL);
-#else
-    void *p = NULL;
-    int err = posix_memalign(&p, alignment, size);
-    assert(err == 0);
-#endif
     return p;
 }
 
@@ -42,7 +35,7 @@ static void toml_default_free(void *context, void *p)
 }
 
 static TomlAllocFuncs g_default_alloc_funcs = {
-    &toml_default_aligned_alloc,
+    &toml_default_malloc,
     &toml_default_realloc,
     &toml_default_free
 };
@@ -56,9 +49,9 @@ void toml_set_allocator(void *context, TOML_CONST TomlAllocFuncs *funcs)
     g_alloc_funcs = funcs;
 }
 
-void* toml_aligned_alloc(size_t alignment, size_t size)
+void* toml_malloc(size_t size)
 {
-    return g_alloc_funcs->aligned_alloc(g_alloc_context, alignment, size);
+    return g_alloc_funcs->malloc(g_alloc_context, size);
 }
 
 void* toml_realloc(void *p, size_t size)
@@ -76,7 +69,7 @@ void toml_free(void *p)
 char* toml_strdup(TOML_CONST char *str)
 {
     size_t len = strlen(str) + 1;
-    void *new = TOML_NEW(char, len);
+    void *new = toml_malloc(len);
     if (new == NULL)
         return NULL;
 
@@ -85,7 +78,7 @@ char* toml_strdup(TOML_CONST char *str)
 
 char *toml_strndup(TOML_CONST char *str, size_t n)
 {
-    char *result = TOML_NEW(char, n + 1);
+    char *result = toml_malloc(n + 1);
     if (result == NULL)
         return NULL;
 
@@ -106,7 +99,7 @@ int toml_vasprintf(char **str, TOML_CONST char *format, va_list args)
         return size;
     }
 
-    *str = TOML_NEW(char, (size_t)size + 1);
+    *str = toml_malloc((size_t)size + 1);
     if (*str == NULL)
         return -1;
 
@@ -181,7 +174,7 @@ TOML_INLINE size_t toml_roundup_pow_of_two_size_t(size_t x)
 
 TomlString *toml_string_new(void)
 {
-    TomlString *self = TOML_NEW(TomlString);
+    TomlString *self = toml_malloc(sizeof(TomlString));
     self->str = NULL;
     self->len = 0;
     self->_capacity = 0;
@@ -274,7 +267,7 @@ int toml_string_equals(TOML_CONST TomlString *self, TOML_CONST TomlString *other
 
 TomlTable *toml_table_new(void)
 {
-    TomlTable *self = TOML_NEW(TomlTable);
+    TomlTable *self = toml_malloc(sizeof(TomlTable));
     self->_capacity = 0;
     self->_keyvals = NULL;
     self->len = 0;
@@ -444,7 +437,7 @@ void toml_table_iter_next(TomlTableIter *self)
 
 TomlArray *toml_array_new(void)
 {
-    TomlArray *self = TOML_NEW(TomlArray);
+    TomlArray *self = toml_malloc(sizeof(TomlArray));
     self->elements = NULL;
     self->len = 0;
     self->_capacity = 0;
@@ -480,7 +473,7 @@ void toml_array_append(TomlArray *self, TomlValue *value)
 
 TomlValue *toml_value_new(TomlType type)
 {
-    TomlValue *self = TOML_NEW(TomlValue);
+    TomlValue *self = toml_malloc(sizeof(TomlValue));
     self->type = type;
     switch (type) {
         case TOML_TABLE:
@@ -510,7 +503,7 @@ TomlValue *toml_value_new(TomlType type)
 
 TomlValue *toml_value_from_str(TOML_CONST char *str)
 {
-    TomlValue *self = TOML_NEW(TomlValue);
+    TomlValue *self = toml_malloc(sizeof(TomlValue));
     self->value.string = toml_string_from_str(str);
     self->type = TOML_STRING;
     return self;
@@ -518,7 +511,7 @@ TomlValue *toml_value_from_str(TOML_CONST char *str)
 
 TomlValue *toml_value_from_nstr(TOML_CONST char *str, size_t len)
 {
-    TomlValue *self = TOML_NEW(TomlValue);
+    TomlValue *self = toml_malloc(sizeof(TomlValue));
     self->value.string = toml_string_from_nstr(str, len);
     self->type = TOML_STRING;
     return self;
@@ -526,7 +519,7 @@ TomlValue *toml_value_from_nstr(TOML_CONST char *str, size_t len)
 
 TomlValue *toml_value_new_table(void)
 {
-    TomlValue *self = TOML_NEW(TomlValue);
+    TomlValue *self = toml_malloc(sizeof(TomlValue));
     self->value.table = toml_table_new();
     self->type = TOML_TABLE;
     return self;
@@ -534,7 +527,7 @@ TomlValue *toml_value_new_table(void)
 
 TomlValue *toml_value_new_array(void)
 {
-    TomlValue *self = TOML_NEW(TomlValue);
+    TomlValue *self = toml_malloc(sizeof(TomlValue));
     self->value.array = toml_array_new();
     self->type = TOML_ARRAY;
     return self;
@@ -546,7 +539,7 @@ TomlValue *toml_value_new_integer(long long integer)
 TomlValue *toml_value_new_integer(long integer)
 #endif
 {
-    TomlValue *self = TOML_NEW(TomlValue);
+    TomlValue *self = toml_malloc(sizeof(TomlValue));
     self->value.integer = integer;
     self->type = TOML_INTEGER;
     return self;
@@ -554,7 +547,7 @@ TomlValue *toml_value_new_integer(long integer)
 
 TomlValue *toml_value_new_float(double float_)
 {
-    TomlValue *self = TOML_NEW(TomlValue);
+    TomlValue *self = toml_malloc(sizeof(TomlValue));
     self->value.float_ = float_;
     self->type = TOML_FLOAT;
     return self;
@@ -567,7 +560,7 @@ TomlValue *toml_value_new_datetime(void)
 
 TomlValue *toml_value_new_boolean(int boolean)
 {
-    TomlValue *self = TOML_NEW(TomlValue);
+    TomlValue *self = toml_malloc(sizeof(TomlValue));
     self->value.boolean = boolean;
     self->type = TOML_BOOLEAN;
     return self;
@@ -607,7 +600,7 @@ typedef struct _TomlParser {
 
 TomlParser *toml_parser_new(TOML_CONST char *str, size_t len)
 {
-    TomlParser *self = TOML_NEW(TomlParser);
+    TomlParser *self = toml_malloc(sizeof(TomlParser));
     self->begin = str;
     self->end = str + len;
     self->ptr = str;

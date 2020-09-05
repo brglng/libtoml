@@ -90,7 +90,7 @@ cleanup:
 
     if (toml_err()->code != TOML_OK) {
         fprintf(stderr, "%s\n", toml_err()->message);
-        rc = toml_err()->code;
+        rc = (int)toml_err()->code;
     }
     toml_err_clear();
     return rc;

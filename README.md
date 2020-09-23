@@ -22,12 +22,37 @@ On Windows:
     cmake ..
     cmake --build .
 
+## CMake Support
+
+Use `FetchContent`:
+
+    include(FetchContent)
+    FetchContent_Declare(libtoml
+        GIT_REPOSITORY    "https://github.com/brglng/libtoml.git" 
+        GIT_SHALLOW       ON
+        )
+    FetchContent_MakeAvailable(libtoml)
+    add_executable(yourprogram yourprogram.c)
+    target_link_libraries(yourprogram toml::toml)
+
+Use `add_subdirectory`:
+
+    add_subdirectory(libtoml)
+    add_executable(yourprogram yourprogram.c)
+    target_link_libraries(yourprogram toml::toml)
+
+Use `find_package`:
+
+    find_package(toml)
+    add_executable(yourprogram yourprogram.c)
+    target_link_libraries(yourprogram toml::toml)
+
 # Usage
 
 Load from a file using a filename:
 ```c
 TomlTable *table = toml_load_filename("path/to/my/file.toml");
-if (table != NULL) {
+if (toml_err()->code == TOML_OK) {
     TomlTableIter it = toml_table_iter_new(table);
     while (toml_table_iter_has_next(&it)) {
         TomlKeyValue *keyval = toml_table_iter_get(&it);

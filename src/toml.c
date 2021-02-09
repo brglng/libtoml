@@ -1696,8 +1696,6 @@ TomlTable* toml_load_nstr_filename(TOML_CONST char *str, size_t len,
     parser->filename = toml_strdup(filename);
 
     table = toml_parse(parser);
-    if (table == NULL)
-        return NULL;
 
     toml_parser_free(parser);
     return table;

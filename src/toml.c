@@ -1128,7 +1128,7 @@ TomlValue* toml_parse_bool(TomlParser *self)
     }
 
     if (self->ptr + 5 <= self->end && strncmp(self->ptr, "false", 5) == 0 &&
-        (self->ptr + 5 == self->end || isspace(*(self->ptr + 5)) || *(self->ptr + 4) == ',' || *(self->ptr + 4) == ']' || *(self->ptr + 4) == '}')) {
+        (self->ptr + 5 == self->end || isspace(*(self->ptr + 5)) || *(self->ptr + 5) == ',' || *(self->ptr + 5) == ']' || *(self->ptr + 5) == '}')) {
         toml_next_n(self, 5);
         return toml_value_new_boolean(TOML_FALSE);
     }

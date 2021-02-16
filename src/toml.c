@@ -1139,7 +1139,7 @@ TomlValue* toml_parse_bool(TomlParser *self)
 TomlValue* toml_parse_array(TomlParser *self);
 TomlValue* toml_parse_inline_table(TomlParser *self);
 
-TomlValue* toml_parse_value(TomlParser *self, int allow_comma)
+TomlValue* toml_parse_value(TomlParser *self)
 {
     TomlValue *value = NULL;
 
@@ -1160,7 +1160,7 @@ TomlValue* toml_parse_value(TomlParser *self, int allow_comma)
     } else if (isdigit(ch) || ch == '+' || ch == '-' || ch == '.' || ch == 'n' || ch == 'i') {
         value = toml_parse_int_or_float_or_time(self);
     } else if (ch == 't' || ch == 'f') {
-        value = toml_parse_bool(self, allow_comma);
+        value = toml_parse_bool(self);
     } else if (ch == '[') {
         toml_move_next(self);
         value = toml_parse_array(self);
@@ -1175,7 +1175,7 @@ TomlValue* toml_parse_value(TomlParser *self, int allow_comma)
     return value;
 }
 
-TomlErrCode toml_parse_key_value(TomlParser *self, TomlTable *table, int allow_comma)
+TomlErrCode toml_parse_key_value(TomlParser *self, TomlTable *table)
 {
     TomlString *key = NULL;
     TomlValue *value = NULL;
@@ -1250,7 +1250,7 @@ TomlErrCode toml_parse_key_value(TomlParser *self, TomlTable *table, int allow_c
             return TOML_ERR_SYNTAX;
         }
 
-        value = toml_parse_value(self, allow_comma);
+        value = toml_parse_value(self);
         if (value == NULL)
             return toml_err()->code;
 
@@ -1313,7 +1313,7 @@ TomlValue* toml_parse_array(TomlParser *self)
             toml_move_next(self);
             break;
         } else {
-            value = toml_parse_value(self, 1);
+            value = toml_parse_value(self);
             if (value == NULL) {
                 goto error;
             }
@@ -1422,7 +1422,7 @@ TomlValue* toml_parse_inline_table(TomlParser *self)
             goto error;
         }
 
-        value = toml_parse_value(self, 1);
+        value = toml_parse_value(self);
         if (value == NULL)
             goto error;
 
@@ -1635,7 +1635,7 @@ TomlErrCode toml_parse_table(TomlParser *self, TomlTable *table)
     if (real_table == NULL)
         goto error;
 
-    toml_parse_key_value(self, real_table, 0);
+    toml_parse_key_value(self, real_table);
 
     goto cleanup;
 
@@ -1671,7 +1671,7 @@ TomlTable* toml_parse(TomlParser *self)
             if (toml_parse_table(self, table) != 0)
                 return NULL;
         } else if (isalnum(ch) || ch == '_' || ch == '-') {
-            if (toml_parse_key_value(self, table, 0) != 0)
+            if (toml_parse_key_value(self, table) != 0)
                 return NULL;
         } else if (ch == ' ' || ch == '\t' || ch == '\r') {
             do {

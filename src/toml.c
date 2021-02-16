@@ -1119,16 +1119,16 @@ cleanup:
     return result;
 }
 
-TomlValue* toml_parse_bool(TomlParser *self)
+TomlValue* toml_parse_bool(TomlParser *self, int allow_comma)
 {
     if (self->ptr + 4 <= self->end && strncmp(self->ptr, "true", 4) == 0 &&
-        (self->ptr + 4 == self->end || isspace(*(self->ptr + 4)))) {
+        (self->ptr + 4 == self->end || isspace(*(self->ptr + 4)) || (allow_comma && *(self->ptr + 4) == ','))) {
         toml_next_n(self, 4);
         return toml_value_new_boolean(TOML_TRUE);
     }
 
     if (self->ptr + 5 <= self->end && strncmp(self->ptr, "false", 5) == 0 &&
-        (self->ptr + 5 == self->end || isspace(*(self->ptr + 5)))) {
+        (self->ptr + 5 == self->end || isspace(*(self->ptr + 5)) || (allow_comma && *(self->ptr + 4) == ','))) {
         toml_next_n(self, 5);
         return toml_value_new_boolean(TOML_FALSE);
     }
@@ -1139,7 +1139,7 @@ TomlValue* toml_parse_bool(TomlParser *self)
 TomlValue* toml_parse_array(TomlParser *self);
 TomlValue* toml_parse_inline_table(TomlParser *self);
 
-TomlValue* toml_parse_value(TomlParser *self)
+TomlValue* toml_parse_value(TomlParser *self, int allow_comma)
 {
     TomlValue *value = NULL;
 
@@ -1160,7 +1160,7 @@ TomlValue* toml_parse_value(TomlParser *self)
     } else if (isdigit(ch) || ch == '+' || ch == '-' || ch == '.' || ch == 'n' || ch == 'i') {
         value = toml_parse_int_or_float_or_time(self);
     } else if (ch == 't' || ch == 'f') {
-        value = toml_parse_bool(self);
+        value = toml_parse_bool(self, allow_comma);
     } else if (ch == '[') {
         toml_move_next(self);
         value = toml_parse_array(self);
@@ -1175,7 +1175,7 @@ TomlValue* toml_parse_value(TomlParser *self)
     return value;
 }
 
-TomlErrCode toml_parse_key_value(TomlParser *self, TomlTable *table)
+TomlErrCode toml_parse_key_value(TomlParser *self, TomlTable *table, int allow_comma)
 {
     TomlString *key = NULL;
     TomlValue *value = NULL;
@@ -1250,7 +1250,7 @@ TomlErrCode toml_parse_key_value(TomlParser *self, TomlTable *table)
             return TOML_ERR_SYNTAX;
         }
 
-        value = toml_parse_value(self);
+        value = toml_parse_value(self, allow_comma);
         if (value == NULL)
             return toml_err()->code;
 
@@ -1313,7 +1313,7 @@ TomlValue* toml_parse_array(TomlParser *self)
             toml_move_next(self);
             break;
         } else {
-            value = toml_parse_value(self);
+            value = toml_parse_value(self, 1);
             if (value == NULL) {
                 goto error;
             }
@@ -1422,7 +1422,7 @@ TomlValue* toml_parse_inline_table(TomlParser *self)
             goto error;
         }
 
-        value = toml_parse_value(self);
+        value = toml_parse_value(self, 1);
         if (value == NULL)
             goto error;
 
@@ -1635,7 +1635,7 @@ TomlErrCode toml_parse_table(TomlParser *self, TomlTable *table)
     if (real_table == NULL)
         goto error;
 
-    toml_parse_key_value(self, real_table);
+    toml_parse_key_value(self, real_table, 0);
 
     goto cleanup;
 
@@ -1671,7 +1671,7 @@ TomlTable* toml_parse(TomlParser *self)
             if (toml_parse_table(self, table) != 0)
                 return NULL;
         } else if (isalnum(ch) || ch == '_' || ch == '-') {
-            if (toml_parse_key_value(self, table) != 0)
+            if (toml_parse_key_value(self, table, 0) != 0)
                 return NULL;
         } else if (ch == ' ' || ch == '\t' || ch == '\r') {
             do {

@@ -102,6 +102,7 @@ int main(void)
         /* should parse */
         PROJECT_SOURCE_DIR "/tests/key-values.toml",
         PROJECT_SOURCE_DIR "/tests/complex-structure.toml",
+        PROJECT_SOURCE_DIR "/tests/long_config.toml",
 
         /* should not parse */
 

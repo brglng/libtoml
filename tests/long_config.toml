@@ -1,0 +1,132 @@
+[voice-5band-compressor]
+input = "voice_44k_16bit_1ch.wav"
+output = "voice_44k_16bit_2ch_5band_compressor.wav"
+sidechain = "WhiteNoiseChange_44.1k_16bit_1ch.wav"
+block-size = 256
+out-channels = 2
+bandnum = 5
+enabled = [true, true, true, true, true]
+threshold = [-60.0, -10.0, -10.0, -10.0, -10.0]
+ratio = [1.5, 1.5, 1.5, 1.5, 1.5]
+attack-time = [30, 40, 50, 60, 70]
+release-time = [100, 110, 120, 130, 140]
+averaging-time = [30, 40, 50, 60, 70]
+crossover_fc = [500.0, 1000.0, 4000.0, 10000.0]
+saturation-threshold = [-1.0, -1.0, -1.0, -1.0, -1.0]
+input-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+output-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+side_chain_enabled = [true, true, true, true, true]
+
+[MultibandCompressor-SweepLevelChange-5Bands-LR-32k]
+input = "SweepLevelChange_32k_LR_2ch.wav"
+output = "MultibandCompressor_SweepLevelChange_5Bands_LR_32k.wav"
+sidechain = "WhiteNoiseChange_44.1k_16bit_1ch.wav"
+block-size = 256
+out-channels = 2
+bandnum = 5
+enabled = [true, true, true, true, true]
+threshold = [-60.0, -10.0, -10.0, -10.0, -10.0]
+ratio = [1.5, 1.5, 1.5, 1.5, 1.5]
+attack-time = [30, 40, 50, 60, 70]
+release-time = [100, 110, 120, 130, 140]
+averaging-time = [30, 40, 50, 60, 70]
+crossover_fc = [500.0, 1000.0, 4000.0, 10000.0]
+saturation-threshold = [-1.0, -1.0, -1.0, -1.0, -1.0]
+input-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+output-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+side_chain_enabled = [true, true, true, true, true]
+
+[MultibandCompressor-SweepLevelChange-5Bands-LR-44k]
+input = "SweepLevelChange_44k_LR_2ch.wav"
+output = "MultibandCompressor_SweepLevelChange_5Bands_LR_44k.wav"
+sidechain = "WhiteNoiseChange_44.1k_16bit_1ch.wav"
+block-size = 256
+out-channels = 2
+bandnum = 5
+enabled = [true, true, true, true, true]
+threshold = [-60.0, -10.0, -10.0, -10.0, -10.0]
+ratio = [1.5, 1.5, 1.5, 1.5, 1.5]
+attack-time = [30, 40, 50, 60, 70]
+release-time = [100, 110, 120, 130, 140]
+averaging-time = [30, 40, 50, 60, 70]
+crossover_fc = [500.0, 1000.0, 4000.0, 10000.0]
+saturation-threshold = [-1.0, -1.0, -1.0, -1.0, -1.0]
+input-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+output-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+side_chain_enabled = [true, true, true, true, true]
+
+[MultibandCompressor-SweepLevelChange-5Bands-LR-48k]
+input = "SweepLevelChange_48k_LR_2ch.wav"
+output = "MultibandCompressor_SweepLevelChange_5Bands_LR_48k.wav"
+sidechain = "WhiteNoiseChange_44.1k_16bit_1ch.wav"
+block-size = 256
+out-channels = 2
+bandnum = 5
+enabled = [true, true, true, true, true]
+threshold = [-60.0, -10.0, -10.0, -10.0, -10.0]
+ratio = [1.5, 1.5, 1.5, 1.5, 1.5]
+attack-time = [30, 40, 50, 60, 70]
+release-time = [100, 110, 120, 130, 140]
+averaging-time = [30, 40, 50, 60, 70]
+crossover_fc = [500.0, 1000.0, 4000.0, 10000.0]
+saturation-threshold = [-1.0, -1.0, -1.0, -1.0, -1.0]
+input-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+output-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+side_chain_enabled = [true, true, true, true, true]
+
+[MultibandCompressor-SweepLevelChange-5Bands-1BandBypass-LR-32k]
+input = "SweepLevelChange_32k_LR_2ch.wav"
+output = "MultibandCompressor_SweepLevelChange_5Bands_1BandBypass_LR_32k.wav"
+sidechain = "WhiteNoiseChange_44.1k_16bit_1ch.wav"
+block-size = 256
+out-channels = 2
+bandnum = 5
+enabled = [true, true, true, false, true]
+threshold = [-60.0, -10.0, -10.0, -10.0, -10.0]
+ratio = [1.5, 1.5, 1.5, 1.5, 1.5]
+attack-time = [30, 40, 50, 60, 70]
+release-time = [100, 110, 120, 130, 140]
+averaging-time = [30, 40, 50, 60, 70]
+crossover_fc = [500.0, 1000.0, 4000.0, 10000.0]
+saturation-threshold = [-1.0, -1.0, -1.0, -1.0, -1.0]
+input-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+output-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+side_chain_enabled = [true, true, true, true, true]
+
+[MultibandCompressor-SweepLevelChange-5Bands-1BandBypass-LR-44k]
+input = "SweepLevelChange_44k_LR_2ch.wav"
+output = "MultibandCompressor_SweepLevelChange_5Bands_1BandBypass_LR_44k.wav"
+sidechain = "WhiteNoiseChange_44.1k_16bit_1ch.wav"
+block-size = 256
+out-channels = 2
+bandnum = 5
+enabled = [true, true, true, false, true]
+threshold = [-60.0, -10.0, -10.0, -10.0, -10.0]
+ratio = [1.5, 1.5, 1.5, 1.5, 1.5]
+attack-time = [30, 40, 50, 60, 70]
+release-time = [100, 110, 120, 130, 140]
+averaging-time = [30, 40, 50, 60, 70]
+crossover_fc = [500.0, 1000.0, 4000.0, 10000.0]
+saturation-threshold = [-1.0, -1.0, -1.0, -1.0, -1.0]
+input-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+output-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+side_chain_enabled = [true, true, true, true, true]
+
+[MultibandCompressor-SweepLevelChange-5Bands-1BandBypass-LR-48k]
+input = "SweepLevelChange_48k_LR_2ch.wav"
+output = "MultibandCompressor_SweepLevelChange_5Bands_1BandBypass_LR_48k.wav"
+sidechain = "WhiteNoiseChange_44.1k_16bit_1ch.wav"
+block-size = 256
+out-channels = 2
+bandnum = 5
+enabled = [true, true, true, false, true]
+threshold = [-60.0, -10.0, -10.0, -10.0, -10.0]
+ratio = [1.5, 1.5, 1.5, 1.5, 1.5]
+attack-time = [30, 40, 50, 60, 70]
+release-time = [100, 110, 120, 130, 140]
+averaging-time = [30, 40, 50, 60, 70]
+crossover_fc = [500.0, 1000.0, 4000.0, 10000.0]
+saturation-threshold = [-1.0, -1.0, -1.0, -1.0, -1.0]
+input-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+output-gain = [1.0, 1.0, 1.0, 1.0, 1.0]
+side_chain_enabled = [true, true, true, true, true]

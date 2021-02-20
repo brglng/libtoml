@@ -1725,17 +1725,17 @@ TomlTable* toml_load_file_filename(FILE *file, TOML_CONST char *filename)
     do {
         bytes_to_read = str->_capacity - str->len - 1;
 
-        count = fread(str->str, 1, bytes_to_read, file);
+        count = fread(&str->str[str->len], 1, bytes_to_read, file);
         if (ferror(file)) {
             toml_err_set(TOML_ERR_OS, "Error when reading %s [errno %d: %s]", filename, errno, strerror(errno));
             goto error;
         }
 
+        str->len += count;
+
         if (str->len + 1 >= str->_capacity) {
             toml_string_expand_if_necessary(str, str->_capacity * 2);
         }
-
-        str->len += count;
     } while (count == bytes_to_read);
 
     str->str[str->len] = 0;

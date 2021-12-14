@@ -127,7 +127,7 @@ void toml_err_clear(void)
             toml_free(g_err.message);
         }
         g_err.code = TOML_OK;
-        g_err.message = "";
+        g_err.message = (char*)"";
         g_err._is_literal = TOML_TRUE;
     }
 }
